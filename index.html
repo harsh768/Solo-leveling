@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="The System">
+<title>The System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #060608;
+  --bg2: #0c0c10;
+  --bg3: #111118;
+  --border: #1e1e2a;
+  --border2: #2a2a3a;
+  --text: #e8e8f0;
+  --muted: #4a4a5a;
+  --muted2: #2a2a38;
+  --purple: #7c3aed;
+  --purple-bright: #a855f7;
+  --purple-glow: rgba(124,58,237,0.15);
+  --blue: #1d4ed8;
+  --blue-bright: #3b82f6;
+  --gold: #d97706;
+  --gold-bright: #f59e0b;
+  --gold-glow: rgba(245,158,11,0.12);
+  --red: #dc2626;
+  --red-bright: #ef4444;
+  --green: #059669;
+  --green-bright: #10b981;
+  --cyan: #0891b2;
+  --cyan-bright: #06b6d4;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, sans-serif;
+  min-height: 100vh;
+  padding-bottom: 120px;
+  overflow-x: hidden;
+}
+
+/* Ambient background glow */
+body::before {
+  content: '';
+  position: fixed;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(124,58,237,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* HEADER */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(6,6,8,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 48px 20px 16px;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.system-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--purple-bright);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
+.header-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #e8e8f0 0%, var(--purple-bright) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.level-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.level-num {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold-bright);
+  line-height: 1;
+}
+
+.level-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* XP BAR */
+.xp-section { margin-bottom: 4px; }
+
+.xp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.xp-label { font-size: 11px; color: var(--muted); letter-spacing: 0.5px; }
+.xp-count { font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--purple-bright); }
+
+.xp-bar-wrap {
+  height: 5px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--purple) 0%, var(--purple-bright) 60%, #c084fc 100%);
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.xp-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+  border-radius: 3px;
+}
+
+.t1-status {
+  font-size: 10px;
+  color: var(--gold-bright);
+  margin-top: 6px;
+  letter-spacing: 1.5px;
+  display: none;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+}
+
+/* OATH BOX */
+.oath-box {
+  margin: 16px 16px 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.oath-box::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--purple-bright), var(--blue-bright));
+  border-radius: 3px 0 0 3px;
+}
+
+.oath-eyebrow {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--purple-bright);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+.oath-item {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 5px;
+  display: flex;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.oath-num { color: var(--muted2); min-width: 14px; font-family: 'Rajdhani', sans-serif; font-size: 13px; }
+
+/* TIER SECTION */
+.tier-section { margin: 20px 16px 0; }
+
+.tier-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.tier-pill {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  border-radius: 5px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
+
+.tier-info {}
+.tier-name { font-size: 14px; font-weight: 600; letter-spacing: 0.3px; }
+.tier-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* ITEM CARD */
+.items-list { display: flex; flex-direction: column; gap: 7px; }
+
+.item-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 11px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.25s, background 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.item-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  transition: width 0.25s;
+  border-radius: 14px 0 0 14px;
+}
+
+.item-card.done::before { width: 3px; }
+
+.item-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.item-emoji { font-size: 18px; flex-shrink: 0; }
+.item-text { min-width: 0; }
+.item-label { font-size: 13px; color: #666; transition: color 0.25s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-card.done .item-label { color: var(--text); font-weight: 500; }
+.item-sub { font-size: 10px; color: var(--muted2); margin-top: 2px; letter-spacing: 0.5px; transition: color 0.25s; }
+
+/* CONTROLS */
+.controls { display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: 8px; }
+
+.ctrl-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+  line-height: 1;
+  transition: all 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
+}
+
+.ctrl-btn:active { transform: scale(0.9); }
+
+.ctrl-val {
+  min-width: 26px;
+  text-align: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--muted2);
+  transition: color 0.25s;
+  flex-shrink: 0;
+}
+
+/* NEW DAY BTN */
+.new-day-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 7px 13px;
+  font-size: 11px;
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.new-day-btn:active { background: var(--bg3); }
+
+/* CONFIRM SHEET */
+.confirm-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+.confirm-overlay.show { display: flex; }
+
+.confirm-sheet {
+  background: #12121a;
+  border: 1px solid var(--border2);
+  border-radius: 24px 24px 0 0;
+  padding: 32px 24px 52px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.confirm-icon { font-size: 36px; margin-bottom: 12px; }
+.confirm-title { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; }
+.confirm-sub { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+
+.confirm-yes {
+  width: 100%;
+  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-bright) 100%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.confirm-no {
+  width: 100%;
+  background: var(--bg3);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* FOOTER */
+.footer {
+  margin: 28px 16px 0;
+  text-align: center;
+  padding: 22px 20px;
+  background: var(--bg2);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--purple-bright), transparent);
+  opacity: 0.3;
+}
+
+.footer-quote {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+  letter-spacing: 0.3px;
+}
+
+.footer-quote strong {
+  color: var(--purple-bright);
+  font-weight: 600;
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: #1a1a28;
+  border: 1px solid var(--purple-bright);
+  color: var(--purple-bright);
+  padding: 10px 20px;
+  border-radius: 100px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 300;
+  white-space: nowrap;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* SCAN LINE EFFECT on header */
+.scanline {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--purple-bright) 50%, transparent 100%);
+  opacity: 0;
+  z-index: 101;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.scanline.flash {
+  animation: scan 0.6s ease-out;
+}
+
+@keyframes scan {
+  0% { opacity: 0; top: 0; }
+  30% { opacity: 0.6; }
+  100% { opacity: 0; top: 100vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="scanline" id="scanline"></div>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="system-label">[ THE SYSTEM ONLINE ]</div>
+      <div class="header-title">ARISE, SHUBHAM</div>
+    </div>
+    <div class="level-badge">
+      <div class="level-num" id="level-display">S</div>
+      <div class="level-label">RANK</div>
+    </div>
+  </div>
+  <div class="xp-section">
+    <div class="xp-row">
+      <span class="xp-label">DAILY POWER</span>
+      <span class="xp-count" id="xp-count">0 / 0 XP</span>
+    </div>
+    <div class="xp-bar-wrap">
+      <div class="xp-bar-fill" id="xp-fill" style="width:0%"></div>
+    </div>
+    <div class="t1-status" id="t1-status">⚔ CORE PROTOCOL COMPLETE — STREAK PROTECTED</div>
+  </div>
+  <button class="new-day-btn" onclick="showConfirm()">NEW DAY ↺</button>
+</div>
+
+<div class="oath-box">
+  <div class="oath-eyebrow">⬡ Hunter's Oath</div>
+  <div class="oath-item"><span class="oath-num">I.</span><span>Core Protocol never breaks. No exceptions. No negotiations.</span></div>
+  <div class="oath-item"><span class="oath-num">II.</span><span>Never miss twice. One slip = human. Two = new bad habit forming.</span></div>
+  <div class="oath-item"><span class="oath-num">III.</span><span>One bad night doesn't erase the work. Arise the next morning.</span></div>
+  <div class="oath-item"><span class="oath-num">IV.</span><span>Sunday: 1 cheat meal allowed. Rice rule relaxes.</span></div>
+  <div class="oath-item"><span class="oath-num">V.</span><span>Tier 5 = limits. Lower is stronger. Control is power.</span></div>
+</div>
+
+<div id="tiers-root"></div>
+
+<div class="footer">
+  <div class="footer-quote">
+    <strong>"I alone level up."</strong><br>
+    UPSC. Job. Abs. Ek din nahi —<br>ek saal ka war hai yeh.
+  </div>
+</div>
+
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-sheet">
+    <div class="confirm-icon">🌑</div>
+    <div class="confirm-title">BEGIN NEW DAY?</div>
+    <div class="confirm-sub">All counters reset. Yesterday's mission is logged. Rise again, Hunter.</div>
+    <button class="confirm-yes" onclick="doReset()">ARISE ⚡</button>
+    <button class="confirm-no" onclick="hideConfirm()">Not yet</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TIERS = [
+  {
+    id: "t1",
+    label: "CORE PROTOCOL",
+    pill: "TIER I",
+    desc: "Streak dies if any of these break.",
+    color: "#ef4444",
+    glow: "rgba(239,68,68,0.08)",
+    glowBorder: "rgba(239,68,68,0.35)",
+    glowAccent: "#ef4444",
+    xp: 10,
+    items: [
+      { id: "study", label: "25 min UPSC Study", emoji: "📚", streak: true, sub: "non-negotiable" },
+      { id: "nocigs", label: "No Cigarettes", emoji: "🚭", streak: true, sub: "non-negotiable" },
+      { id: "deficit", label: "Calorie Deficit (<1500)", emoji: "🔥", streak: true, sub: "non-negotiable" },
+    ]
+  },
+  {
+    id: "t2",
+    label: "COMBAT TRAINING",
+    pill: "TIER II",
+    desc: "Miss once = ok. Miss twice = not ok.",
+    color: "#f59e0b",
+    glow: "rgba(245,158,11,0.07)",
+    glowBorder: "rgba(245,158,11,0.3)",
+    glowAccent: "#f59e0b",
+    xp: 5,
+    items: [
+      { id: "protein", label: "100g Protein", emoji: "💪", streak: true, sub: "muscle preserved" },
+      { id: "activity", label: "Physical Activity / 10k Steps", emoji: "🏃", streak: true, sub: "body stays active" },
+      { id: "iffast", label: "Intermittent Fast (min 12hr)", emoji: "⏱️", streak: true, sub: "fat burning window" },
+      { id: "nosmoking", label: "No Smoking (anywhere)", emoji: "🚫", streak: true, sub: "lung capacity ↑" },
+      { id: "noalcohol", label: "No Alcohol", emoji: "🍺", streak: true, sub: "sleep quality ↑" },
+      { id: "novape", label: "Vape < 200 puffs", emoji: "💨", streak: true, sub: "reduce dependency" },
+      { id: "nojunk", label: "No Junk (1 bite ok)", emoji: "🍕", streak: true, sub: "inflammation ↓" },
+      { id: "nosugar", label: "No Sugar", emoji: "🍬", streak: true, sub: "energy stable" },
+      { id: "norice", label: "No Rice (Sunday ok)", emoji: "🍚", streak: true, sub: "low carb cut" },
+      { id: "water", label: "3L Water", emoji: "💧", streak: true, sub: "recovery + focus" },
+    ]
+  },
+  {
+    id: "t3",
+    label: "DUNGEON QUEST",
+    pill: "TIER III",
+    desc: "UPSC + Work. Track progress not streaks.",
+    color: "#10b981",
+    glow: "rgba(16,185,129,0.07)",
+    glowBorder: "rgba(16,185,129,0.3)",
+    glowAccent: "#10b981",
+    xp: 4,
+    items: [
+      { id: "pyqs", label: "5 PYQs Solved", emoji: "📝", streak: false, sub: "upsc pattern recognition" },
+      { id: "mathanswer", label: "1 Maths Answer Written", emoji: "🔢", streak: false, sub: "speed + accuracy" },
+      { id: "normalanswer", label: "1 GS Answer Written", emoji: "✍️", streak: false, sub: "mains prep" },
+      { id: "ca", label: "Current Affairs", emoji: "📰", streak: false, sub: "hindu / pib daily" },
+      { id: "revision", label: "Revise Yesterday's Notes", emoji: "🔁", streak: false, sub: "retention loop" },
+      { id: "dsa", label: "1 DSA Problem", emoji: "💻", streak: false, sub: "job performance" },
+      { id: "tech", label: "1 Tech Article", emoji: "🔖", streak: false, sub: "stay relevant at work" },
+      { id: "deepwork", label: "1hr Deep Work Block", emoji: "🎯", streak: false, sub: "no phone zone" },
+    ]
+  },
+  {
+    id: "t4",
+    label: "HUNTER PHYSIQUE",
+    pill: "TIER IV",
+    desc: "Body is the weapon. Sharpen it daily.",
+    color: "#3b82f6",
+    glow: "rgba(59,130,246,0.07)",
+    glowBorder: "rgba(59,130,246,0.3)",
+    glowAccent: "#3b82f6",
+    xp: 3,
+    items: [
+      { id: "abbs", label: "Abs Workout", emoji: "⚡", streak: true, sub: "the goal" },
+      { id: "proteinshake", label: "Protein Shake", emoji: "🥛", streak: false, sub: "muscle synthesis" },
+      { id: "walk", label: "Morning Sunlight / Walk", emoji: "🌅", streak: true, sub: "cortisol reset" },
+      { id: "stretch", label: "Stretch / Mobility 10min", emoji: "🧘", streak: false, sub: "injury prevention" },
+      { id: "sleep", label: "Sleep by 12am", emoji: "🌙", streak: true, sub: "recovery is progress" },
+      { id: "wake", label: "Wake before 8am", emoji: "⏰", streak: true, sub: "discipline starts here" },
+      { id: "nomasturbation", label: "No PMO", emoji: "🧠", streak: true, sub: "energy + focus preserved" },
+    ]
+  },
+  {
+    id: "t5",
+    label: "HUNTER'S CODE",
+    pill: "TIER V",
+    desc: "Appearance matters. Respect yourself.",
+    color: "#06b6d4",
+    glow: "rgba(6,182,212,0.07)",
+    glowBorder: "rgba(6,182,212,0.3)",
+    glowAccent: "#06b6d4",
+    xp: 2,
+    items: [
+      { id: "bath", label: "Bath", emoji: "🚿", streak: true, sub: "every single day" },
+      { id: "brush", label: "Brush Teeth (2x)", emoji: "🦷", streak: true, sub: "morning + night" },
+      { id: "skinmorning", label: "Morning Skincare", emoji: "✨", streak: true, sub: "sunscreen always" },
+      { id: "skinnight", label: "Night Skincare", emoji: "🌛", streak: true, sub: "repair while you sleep" },
+      { id: "facewash", label: "2x Face Wash", emoji: "🫧", streak: true, sub: "clear skin = confidence" },
+      { id: "outfit", label: "Decent Outfit", emoji: "👔", streak: false, sub: "dress like the IAS" },
+    ]
+  },
+  {
+    id: "t6",
+    label: "SHADOW CONTROL",
+    pill: "TIER VI",
+    desc: "Cap these. Every number lower = more power.",
+    color: "#a855f7",
+    glow: "rgba(168,85,247,0.07)",
+    glowBorder: "rgba(168,85,247,0.3)",
+    glowAccent: "#a855f7",
+    xp: 2,
+    items: [
+      { id: "insta", label: "Insta < 30 min", emoji: "📱", streak: true, sub: "attention is currency" },
+      { id: "neeche", label: "Floor visits < 3x", emoji: "🏢", streak: true, sub: "stay locked in" },
+      { id: "orders", label: "Food Orders < 1/day", emoji: "📦", streak: true, sub: "cook = control" },
+      { id: "dietcoke", label: "Diet Coke < 5", emoji: "🥤", streak: false, sub: "gut health" },
+      { id: "noseries", label: "No Series", emoji: "📺", streak: true, sub: "hours reclaimed" },
+      { id: "nomovies", label: "No Movies (weekdays)", emoji: "🎬", streak: false, sub: "save it for weekend" },
+      { id: "noanime", label: "No Anime", emoji: "⛩️", streak: false, sub: "time sink" },
+      { id: "nosnooze", label: "No Snooze Button", emoji: "🔔", streak: true, sub: "first decision of the day" },
+    ]
+  },
+];
+
+const STORAGE_KEY = "thesystem_v3";
+
+function load() {
+  try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : {}; }
+  catch(e) { return {}; }
+}
+
+function save(counts) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(counts)); } catch(e) {}
+}
+
+let counts = load();
+
+function get(id) { return counts[id] || 0; }
+
+function set(id, val) {
+  const old = get(id);
+  counts[id] = Math.max(0, val);
+  save(counts);
+  renderItem(id);
+  updateHeader();
+  if (old === 0 && counts[id] > 0) flashScan();
+}
+
+function allItems() { return TIERS.flatMap(t => t.items); }
+
+function getTierForItem(id) { return TIERS.find(t => t.items.find(i => i.id === id)); }
+
+function totalXP() {
+  let xp = 0;
+  TIERS.forEach(tier => {
+    tier.items.forEach(item => {
+      if (get(item.id) > 0) xp += tier.xp;
+    });
+  });
+  return xp;
+}
+
+function maxXP() {
+  let xp = 0;
+  TIERS.forEach(tier => { xp += tier.items.length * tier.xp; });
+  return xp;
+}
+
+function getRank(pct) {
+  if (pct >= 0.95) return { rank: "S", color: "#f59e0b" };
+  if (pct >= 0.80) return { rank: "A", color: "#a855f7" };
+  if (pct >= 0.60) return { rank: "B", color: "#3b82f6" };
+  if (pct >= 0.40) return { rank: "C", color: "#10b981" };
+  if (pct >= 0.20) return { rank: "D", color: "#6b7280" };
+  return { rank: "E", color: "#4b4b5b" };
+}
+
+function updateHeader() {
+  const xp = totalXP();
+  const max = maxXP();
+  const pct = max > 0 ? xp / max : 0;
+  const rank = getRank(pct);
+
+  document.getElementById("xp-count").textContent = `${xp} / ${max} XP`;
+  document.getElementById("xp-fill").style.width = (pct * 100) + "%";
+
+  const lvlEl = document.getElementById("level-display");
+  lvlEl.textContent = rank.rank;
+  lvlEl.style.color = rank.color;
+
+  const t1 = TIERS[0];
+  const t1Done = t1.items.every(i => get(i.id) > 0);
+  const statusEl = document.getElementById("t1-status");
+  statusEl.style.display = t1Done ? "block" : "none";
+}
+
+function renderItem(id) {
+  const el = document.getElementById("card-" + id);
+  if (!el) return;
+  const tier = getTierForItem(id);
+  const item = tier.items.find(i => i.id === id);
+  const val = get(id);
+  const done = val > 0;
+
+  if (done) {
+    el.classList.add("done");
+    el.style.borderColor = tier.glowBorder;
+    el.style.background = `linear-gradient(135deg, var(--bg2) 0%, ${tier.glow} 100%)`;
+    el.style.setProperty("--accent", tier.color);
+  } else {
+    el.classList.remove("done");
+    el.style.borderColor = "var(--border)";
+    el.style.background = "var(--bg2)";
+  }
+
+  const before = el.querySelector(".card-accent");
+  if (before) before.style.background = done ? tier.color : "transparent";
+
+  el.querySelector(".ctrl-val").textContent = val;
+  el.querySelector(".ctrl-val").style.color = done ? tier.color : "var(--muted2)";
+  el.querySelector(".item-label").style.color = done ? "var(--text)" : "#555";
+
+  const sub = el.querySelector(".item-sub");
+  if (sub && item.streak) {
+    sub.style.color = done ? tier.color + "99" : "var(--muted2)";
+    sub.textContent = done ? "✓ " + item.sub : item.sub;
+  }
+
+  const plusBtn = el.querySelector(".plus-btn");
+  if (done) {
+    plusBtn.style.background = tier.color + "22";
+    plusBtn.style.borderColor = tier.color + "55";
+    plusBtn.style.color = tier.color;
+  } else {
+    plusBtn.style.background = "var(--bg3)";
+    plusBtn.style.borderColor = "var(--border2)";
+    plusBtn.style.color = "var(--muted)";
+  }
+}
+
+function flashScan() {
+  const el = document.getElementById("scanline");
+  el.classList.remove("flash");
+  void el.offsetWidth;
+  el.classList.add("flash");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+function showConfirm() { document.getElementById("confirm-overlay").classList.add("show"); }
+function hideConfirm() { document.getElementById("confirm-overlay").classList.remove("show"); }
+
+function doReset() {
+  counts = {};
+  save(counts);
+  allItems().forEach(i => renderItem(i.id));
+  updateHeader();
+  hideConfirm();
+  showToast("⚡ NEW DAY BEGINS");
+  flashScan();
+}
+
+function buildUI() {
+  const root = document.getElementById("tiers-root");
+  root.innerHTML = "";
+
+  TIERS.forEach(tier => {
+    const sec = document.createElement("div");
+    sec.className = "tier-section";
+
+    const pillStyle = `background:${tier.color}22; color:${tier.color}; border:1px solid ${tier.color}44;`;
+
+    sec.innerHTML = `
+      <div class="tier-header">
+        <div class="tier-pill" style="${pillStyle}">${tier.pill}</div>
+        <div class="tier-info">
+          <div class="tier-name">${tier.label}</div>
+          <div class="tier-desc">${tier.desc}</div>
+        </div>
+      </div>
+      <div class="items-list" id="list-${tier.id}"></div>
+    `;
+
+    root.appendChild(sec);
+
+    const list = sec.querySelector(`#list-${tier.id}`);
+
+    tier.items.forEach(item => {
+      const card = document.createElement("div");
+      card.className = "item-card";
+      card.id = "card-" + item.id;
+
+      card.innerHTML = `
+        <div class="card-accent" style="position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:14px 0 0 14px;transition:background 0.25s;"></div>
+        <div class="item-left">
+          <span class="item-emoji">${item.emoji}</span>
+          <div class="item-text">
+            <div class="item-label">${item.label}</div>
+            <div class="item-sub">${item.sub}</div>
+          </div>
+        </div>
+        <div class="controls">
+          <button class="ctrl-btn minus-btn" data-id="${item.id}">−</button>
+          <span class="ctrl-val">0</span>
+          <button class="ctrl-btn plus-btn" data-id="${item.id}">+</button>
+        </div>
+      `;
+
+      card.querySelector(".minus-btn").addEventListener("click", () => set(item.id, get(item.id) - 1));
+      card.querySelector(".plus-btn").addEventListener("click", () => set(item.id, get(item.id) + 1));
+
+      list.appendChild(card);
+      renderItem(item.id);
+    });
+  });
+
+  updateHeader();
+}
+
+buildUI();
+</script>
+</body>
+</html>
