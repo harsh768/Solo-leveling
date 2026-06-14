@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="The System">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>The System — Solo Leveling Life</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
@@ -1986,7 +1989,7 @@ body::after {
         </div>
       </div>
 
-      <button class="btn btn-ghost btn-block mt-12" onclick="App.showConfirmNewDay()">NEW DAY ↺</button>
+      <button class="btn btn-ghost btn-block mt-12" id="new-day-btn" onclick="App.showConfirmNewDay()">NEW DAY ↺</button>
     </div>
 
     <!-- ROADMAP -->
@@ -2379,7 +2382,7 @@ body::after {
       <p class="modal-sub" style="text-align:left;margin-bottom:12px;">Reset all progress. This cannot be undone.</p>
       <button class="btn btn-secondary btn-block" style="border-color:rgba(220,38,38,0.3);color:var(--red-bright);" onclick="App.confirmReset()">RESET ALL DATA</button>
     </div>
-    <div class="settings-version">THE SYSTEM · BUILD 2.1</div>
+    <div class="settings-version">THE SYSTEM · BUILD 2.2</div>
   </div>
 </div>
 
@@ -4686,17 +4689,20 @@ window.doReset = doReset;
       block.className = "section-block";
       block.id = "custom-habits-block";
       block.innerHTML = `<div class="section-head"><div class="section-title">My Habits</div><div class="section-badge">UNLIMITED</div></div>
-        <div id="custom-habits-list"></div>
-        <div class="habit-add-row" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <div class="habit-add-row" style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
           <input class="input-field" id="new-habit-name" placeholder="New habit name" style="flex:1;min-width:120px;">
           <input class="input-field" id="new-habit-xp" type="number" placeholder="XP" value="5" style="width:64px;">
           <button class="btn btn-primary" onclick="App.addHabitFromShell()">ADD</button>
-        </div>`;
-      today.appendChild(block);
+        </div>
+        <div id="custom-habits-list"></div>`;
+      // Place habits above the "New Day" button so they're easy to find.
+      const newDayBtn = document.getElementById("new-day-btn");
+      if (newDayBtn && newDayBtn.parentNode === today) today.insertBefore(block, newDayBtn);
+      else today.appendChild(block);
     }
     const list = document.getElementById("custom-habits-list");
     if (!list) return;
-    if (!s.habits.length) { list.innerHTML = '<div class="empty-state">Add unlimited habits — each keeps its own streak &amp; stats.</div>'; return; }
+    if (!s.habits.length) { list.innerHTML = '<div class="empty-state">No habits yet. Type a name above and tap ADD — each new habit gets its own 🔥 streak, 📊 stats and a × delete button.</div>'; return; }
     const today = s.today;
     list.innerHTML = s.habits.map(h => {
       const done = !!s.daily.quests["habit_" + h.id];
