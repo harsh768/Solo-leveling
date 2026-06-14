@@ -1847,6 +1847,21 @@ body::after {
 
 @media (min-width:768px){ .dash-tiles { grid-template-columns:repeat(4,1fr); } .hs-grid { grid-template-columns:repeat(4,1fr); } }
 
+/* calendar v2 polish */
+.cal-summary { text-align:center; font-size:11px; color:var(--text-dim); margin:-4px 0 12px; font-family:'Rajdhani',sans-serif; letter-spacing:0.3px; }
+.cal-cell { position:relative; font-size:14px; min-height:38px; }
+.cal-cell .cal-dot { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:currentColor; }
+.cal-cell.done { box-shadow: inset 0 0 0 1px rgba(16,185,129,0.3); }
+.cal-cell.today { box-shadow:0 0 0 2px var(--purple-bright); font-weight:700; }
+.cal-cell.future, .cal-cell.muted, .cal-cell.empty { cursor:default; }
+.cal-grid.cal-fade { animation: calFade .28s ease; }
+@keyframes calFade { from { opacity:0; transform:translateY(4px);} to { opacity:1; transform:translateY(0);} }
+.settings-version { text-align:center; font-size:10px; color:var(--muted); margin-top:16px; letter-spacing:1.5px; font-family:'Rajdhani',sans-serif; }
+
+/* snappier taps on iOS — removes gesture delay on interactive elements */
+.btn, .btn-icon, .non-neg-item, .habit-row, .habit-check, .habit-icon-btn, .quest-card, .tech-card,
+.reward-card, .nav-tab, .cal-cell, .cal-nav, .settings-btn, .tree-head, .tree-topic, .confidence-actions button { touch-action: manipulation; }
+
 </style>
 </head>
 <body>
@@ -2364,6 +2379,7 @@ body::after {
       <p class="modal-sub" style="text-align:left;margin-bottom:12px;">Reset all progress. This cannot be undone.</p>
       <button class="btn btn-secondary btn-block" style="border-color:rgba(220,38,38,0.3);color:var(--red-bright);" onclick="App.confirmReset()">RESET ALL DATA</button>
     </div>
+    <div class="settings-version">THE SYSTEM · BUILD 2.1</div>
   </div>
 </div>
 
@@ -4551,6 +4567,40 @@ window.doReset = doReset;
     if (cc) cc.classList.toggle("done", done);
   }
 
+  // ---- targeted (optimistic) updates: flip only the tapped node, never rebuild the list ----
+  function lightTodayRefresh() {
+    const s = App.getState();
+    paintHeader(s);
+    renderConsistencyCard();
+    const core = coreStreak();
+    App.setText("today-progress-badge", `${core.done} / ${core.total}`);
+    App.setText("week-xp", App.getWeeklyStats().totalXP.toLocaleString());
+    App.setText("month-xp", App.getMonthlyStats().totalXP.toLocaleString());
+  }
+  function updateNonNegItem(qid) {
+    const el = document.getElementById("nn-" + qid);
+    if (!el) return false;
+    const done = !!App.getState().daily.quests[qid];
+    el.classList.toggle("complete", done);
+    const st = el.querySelector(".non-neg-status");
+    if (st) st.textContent = done ? "✓" : "○";
+    return true;
+  }
+  function updateHabitRow(hid) {
+    const el = document.getElementById("habit-row-" + hid);
+    if (!el) return false;
+    const s = App.getState();
+    const done = !!s.daily.quests["habit_" + hid];
+    el.classList.toggle("complete", done);
+    const chk = el.querySelector(".habit-check");
+    if (chk) chk.textContent = done ? "✓" : "";
+    const log = (s.habitLog && s.habitLog[hid]) || { dates: {} };
+    const habit = s.habits.find(h => h.id === hid);
+    const sub = el.querySelector(".habit-sub");
+    if (sub) sub.textContent = `🔥 ${streakOf(log.dates, s.today)}d streak · +${habit ? habit.xp : 5} XP`;
+    return true;
+  }
+
   // Tab-aware: only the visible tab re-renders. This is the core performance fix —
   // a tap no longer rebuilds all 7 tabs (incl. the huge UPSC syllabus tree) every time.
   function renderShellUI() {
@@ -4618,7 +4668,7 @@ window.doReset = doReset;
     const list = s.daily.badDay ? App.BAD_DAY_MINIMUM : App.NON_NEGOTIABLE_QUESTS;
     root.innerHTML = list.map(q => {
       const done = !!s.daily.quests[q.id];
-      return `<div class="non-neg-item ${done ? "complete" : ""}" onclick="App.toggleQuest('${q.id}')">
+      return `<div class="non-neg-item ${done ? "complete" : ""}" id="nn-${q.id}" onclick="App.toggleQuest('${q.id}')">
         <span class="non-neg-icon">${q.emoji}</span>
         <span class="non-neg-label">${q.label}</span>
         <span class="non-neg-status">${done ? "✓" : "○"}</span>
@@ -4652,7 +4702,7 @@ window.doReset = doReset;
       const done = !!s.daily.quests["habit_" + h.id];
       const log = (s.habitLog && s.habitLog[h.id]) || { dates: {} };
       const st = streakOf(log.dates, today);
-      return `<div class="habit-row ${done ? "complete" : ""}">
+      return `<div class="habit-row ${done ? "complete" : ""}" id="habit-row-${h.id}">
         <div class="habit-check" onclick="App.toggleHabit('${h.id}')">${done ? "✓" : ""}</div>
         <div class="habit-main" onclick="App.toggleHabit('${h.id}')">
           <div class="habit-name">${escapeHtml(h.name)}</div>
@@ -4720,19 +4770,21 @@ window.doReset = doReset;
       block = document.createElement("div");
       block.className = "section-block";
       block.id = "study-calendar-block";
-      block.innerHTML = `<div class="section-head"><div><div class="section-title">Study Calendar</div><div class="section-sub">25-min study — tap a day to log it</div></div></div>
+      block.innerHTML = `<div class="section-head"><div><div class="section-title">Study Calendar</div><div class="section-sub">Tap any day to log your 25-min study</div></div></div>
         <div class="cal-wrap glass-card">
           <div class="cal-head">
-            <button class="cal-nav" onclick="App.calPrev()">‹</button>
+            <button class="cal-nav" onclick="App.calPrev()" aria-label="Previous month">‹</button>
             <div class="cal-title" id="cal-title"></div>
-            <button class="cal-nav" onclick="App.calNext()">›</button>
+            <button class="cal-nav" onclick="App.calNext()" aria-label="Next month">›</button>
           </div>
+          <div class="cal-summary" id="cal-summary"></div>
           <div class="cal-dow-row">${["S", "M", "T", "W", "T", "F", "S"].map(d => `<div class="cal-dow">${d}</div>`).join("")}</div>
           <div class="cal-grid" id="cal-grid"></div>
           <div class="cal-legend">
-            <span><i class="lg done"></i>Done</span><span><i class="lg pending"></i>Today</span>
+            <span><i class="lg done"></i>Studied</span><span><i class="lg pending"></i>Today</span>
             <span><i class="lg missed"></i>Missed</span><span><i class="lg future"></i>Upcoming</span>
           </div>
+          <button class="btn btn-ghost btn-block mt-8" onclick="App.calToday()">● Jump to today</button>
         </div>`;
       upsc.insertBefore(block, upsc.firstChild);
     }
@@ -4744,21 +4796,26 @@ window.doReset = doReset;
     const today = s.today, start = s.profile.startDate;
     const studyLog = s.studyLog || {};
     const pad2 = n => String(n).padStart(2, "0");
-    let cells = "";
+    const ym = `${calView.y}-${pad2(calView.m + 1)}`;
+    let studied = 0, elapsed = 0, cells = "";
     for (let i = 0; i < firstDow; i++) cells += `<div class="cal-cell empty"></div>`;
     for (let d = 1; d <= dim; d++) {
-      const date = `${calView.y}-${pad2(calView.m + 1)}-${pad2(d)}`;
-      const studied = !!studyLog[date];
+      const date = `${ym}-${pad2(d)}`;
+      const isStudied = !!studyLog[date];
+      if (isStudied) studied++;
+      if (date <= today) elapsed++;
       let cls;
       if (date > today) cls = "future";
-      else if (studied) cls = "done";
+      else if (isStudied) cls = "done";
       else if (date === today) cls = "pending";
       else if (start && date < start) cls = "muted";
       else cls = "missed";
-      cells += `<div class="cal-cell ${cls}${date === today ? " today" : ""}" onclick="App.toggleStudyDay('${date}')">${d}</div>`;
+      cells += `<div class="cal-cell ${cls}${date === today ? " today" : ""}" onclick="App.toggleStudyDay('${date}')">${d}${isStudied ? '<i class="cal-dot"></i>' : ""}</div>`;
     }
     const grid = document.getElementById("cal-grid");
-    if (grid) grid.innerHTML = cells;
+    if (grid) { grid.innerHTML = cells; grid.classList.remove("cal-fade"); void grid.offsetWidth; grid.classList.add("cal-fade"); }
+    const rate = elapsed ? Math.round(studied / elapsed * 100) : 0;
+    App.setText("cal-summary", `✓ ${studied} studied · ${rate}% this month · 🔥 ${streakOf(studyLog, today)} day streak`);
   }
 
   function renderUpscSubjects() {
@@ -5130,6 +5187,7 @@ window.doReset = doReset;
     },
     calPrev() { if (calView) { calView.m--; if (calView.m < 0) { calView.m = 11; calView.y--; } renderStudyCalendar(); } },
     calNext() { if (calView) { calView.m++; if (calView.m > 11) { calView.m = 0; calView.y++; } renderStudyCalendar(); } },
+    calToday() { const d = new Date(App.getState().today + "T12:00:00"); calView = { y: d.getFullYear(), m: d.getMonth() }; renderStudyCalendar(); },
     completeConfidence() {
       if (!App.getState().daily.confidenceDone) {
         origCompleteConfidence();
@@ -5225,13 +5283,21 @@ window.doReset = doReset;
     setStyle(id, prop, val) { const el = document.getElementById(id); if (el) el.style[prop] = val; },
   });
 
-  // Patch toggleQuest: mutate, refresh the shell, then celebrate.
+  // Patch toggleQuest: mutate, then update ONLY the tapped node for an instant, native feel.
   const origToggle = App.toggleQuest;
   if (typeof origToggle === "function") {
     App.toggleQuest = function (id) {
       const was = App.getState().daily.quests[id];
-      origToggle(id);
-      App.render();
+      origToggle(id);   // mutate state + persist (core)
+      syncLogs();       // keep study/habit logs current
+      saveState();
+      const s = App.getState();
+      let handled = false;
+      if (s.currentTab === "today") {
+        handled = id.indexOf("habit_") === 0 ? updateHabitRow(id.slice(6)) : updateNonNegItem(id);
+        if (handled) lightTodayRefresh();
+      }
+      if (!handled) App.render(); // other tabs (e.g. calendar's study_25) do a full repaint
       if (!was && App.getState().daily.quests[id]) {
         const q = [...App.NON_NEGOTIABLE_QUESTS, ...App.BAD_DAY_MINIMUM].find(x => x.id === id);
         showQuestToast("Quest complete", q ? q.xp : 10);
