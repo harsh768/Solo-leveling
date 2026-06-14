@@ -1757,6 +1757,25 @@ body::after {
 
 .empty-state { text-align: center; color: var(--muted); padding: 24px; font-size: 13px; }
 
+.habit-del-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-left: 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--red-bright);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.15s;
+}
+.habit-del-btn:active { transform: scale(0.9); background: rgba(220, 38, 38, 0.2); }
+
 </style>
 </head>
 <body>
@@ -1771,7 +1790,7 @@ body::after {
     <div class="header-row">
       <div class="header-left">
         <div class="system-label">[ THE SYSTEM ONLINE ]</div>
-        <div class="hunter-name" id="hunter-name">HARSH</div>
+        <div class="hunter-name" id="hunter-name">SHUBHAM</div>
         <div class="day-counter">DAY <span id="day-num">1</span> / <span id="day-total">180</span></div>
       </div>
       <div class="header-right">
@@ -2259,7 +2278,7 @@ body::after {
 
     <div class="input-group">
       <label class="input-label">Hunter Name</label>
-      <input type="text" class="input-field" id="settings-name" value="HARSH" onchange="App.saveSettings()">
+      <input type="text" class="input-field" id="settings-name" value="SHUBHAM" onchange="App.saveSettings()">
     </div>
 
     <div class="input-group">
@@ -2406,6 +2425,7 @@ const BAD_DAY_MINIMUM = [
 // STREAK KEYS
 // ============================================================================
 const STREAK_TYPES = [
+  { key: "core", label: "Core", emoji: "🔥" },
   { key: "study", label: "Study", emoji: "📚" },
   { key: "workout", label: "Workout", emoji: "💪" },
   { key: "reading", label: "Reading", emoji: "📖" },
@@ -3433,6 +3453,8 @@ function updateStreak(key, success) {
 
 function updateStreaksOnArchive(date) {
   const q = state.daily.quests;
+  // Core (main) streak survives as long as the single non-negotiable — 25min study — is done.
+  updateStreak("core", !!q.study_25);
   updateStreak("study", !!q.study_25);
   updateStreak("ca", !!q.ca);
   updateStreak("reading", !!q.read);
@@ -4357,7 +4379,7 @@ window.doReset = doReset;
     const rd = App.getRoadmapDay();
     const core = coreStreak();
 
-    App.setText("hunter-name", (s.profile.name || "HARSH").toUpperCase());
+    App.setText("hunter-name", (s.profile.name || "SHUBHAM").toUpperCase());
     App.setText("day-num", dayNum());
     App.setText("day-total", 180);
     App.setText("rank-badge", rank.id);
@@ -4368,19 +4390,21 @@ window.doReset = doReset;
     App.setStyle("daily-xp-fill", "width", Math.min(100, (dailyXp / maxDaily) * 100) + "%");
     App.setText("lifetime-xp-count", `${s.lifetimeXP.toLocaleString()} XP · ${rank.label}`);
     App.setStyle("lifetime-xp-fill", "width", (rankProg.pct * 100) + "%");
-    App.setText("streak-core-num", s.streaks.study || 0);
+    App.setText("streak-core-num", (s.streaks.core != null ? s.streaks.core : s.streaks.study) || 0);
     App.setText("streak-perfect-num", s.streaks.study || 0);
     App.setText("streak-gym-num", s.streaks.workout || 0);
     App.setText("streak-study-num", s.streaks.study || 0);
 
     const banner = document.getElementById("bad-day-banner");
     if (banner) {
-      banner.classList.toggle("active", !core.pct && !s.daily.badDay);
+      // Core stays intact as long as the single non-negotiable (25min study) is done.
+      const coreIntact = !!s.daily.quests.study_25;
+      banner.classList.toggle("active", !coreIntact && !s.daily.badDay);
       banner.classList.toggle("protocol-on", s.daily.badDay);
       const sub = banner.querySelector(".bad-day-sub");
       if (sub) sub.textContent = s.daily.badDay
         ? "Protocol active — minimum quests protect your streak."
-        : "Core broken today? Activate protocol to protect streak & log honestly.";
+        : "Core streak needs your 25min study today. Do it, or activate protocol.";
       const btn = banner.querySelector(".bad-day-btn");
       if (btn) btn.textContent = s.daily.badDay ? "ACTIVE ✓" : "ACTIVATE";
     }
@@ -4485,9 +4509,11 @@ window.doReset = doReset;
     if (!s.habits.length) { list.innerHTML = '<div class="empty-state">Add personal quests above</div>'; return; }
     list.innerHTML = s.habits.map(h => {
       const done = !!s.daily.quests["habit_" + h.id];
-      return `<div class="non-neg-item ${done ? "complete" : ""}" onclick="App.toggleHabit('${h.id}')">
-        <span class="non-neg-icon">⭐</span><span class="non-neg-label">${h.name}</span>
-        <span class="non-neg-status">${done ? "✓" : "+" + h.xp + " XP"}</span></div>`;
+      return `<div class="non-neg-item ${done ? "complete" : ""}">
+        <span class="non-neg-icon" style="cursor:pointer;" onclick="App.toggleHabit('${h.id}')">⭐</span>
+        <span class="non-neg-label" style="cursor:pointer;" onclick="App.toggleHabit('${h.id}')">${h.name}</span>
+        <span class="non-neg-status" style="cursor:pointer;" onclick="App.toggleHabit('${h.id}')">${done ? "✓" : "+" + h.xp + " XP"}</span>
+        <button class="habit-del-btn" onclick="App.removeHabitFromShell('${h.id}')" aria-label="Delete habit">×</button></div>`;
     }).join("");
   }
 
@@ -4680,6 +4706,25 @@ window.doReset = doReset;
     el.classList.add("flash");
   }
 
+  // Auto-start a new day at midnight (00:00 local) — no manual "New Day" needed.
+  function startDayWatcher() {
+    const currentDateStr = () => new Date().toISOString().slice(0, 10);
+    const rollIfNeeded = () => {
+      if (App.getState().today !== currentDateStr()) {
+        App.render();   // render() -> ensureToday() archives the prior day & resets dailies
+        flashScan();
+      }
+    };
+    const scheduleMidnight = () => {
+      const now = new Date();
+      const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 5);
+      setTimeout(() => { rollIfNeeded(); scheduleMidnight(); }, nextMidnight - now);
+    };
+    scheduleMidnight();
+    // Safety net: catches sleep/wake, background-throttled tabs, and timer drift.
+    setInterval(rollIfNeeded, 60000);
+  }
+
   // Particles
   function initParticles() {
     const canvas = document.getElementById("particles");
@@ -4716,6 +4761,15 @@ window.doReset = doReset;
       document.querySelectorAll(".tab-panel").forEach(p => { if (p.id.startsWith("tab-")) p.dataset.built = "1"; });
       initParticles();
       const s = App.getState();
+      // Seed the new "core" streak from the existing study streak for returning hunters.
+      if (s.streaks && s.streaks.core == null) {
+        s.streaks.core = s.streaks.study || 0;
+        s.streakBest = s.streakBest || {};
+        if (s.streakBest.core == null) s.streakBest.core = s.streakBest.study || s.streaks.core || 0;
+        s.streakLast = s.streakLast || {};
+        if (s.streakLast.core == null) s.streakLast.core = s.streakLast.study || null;
+      }
+      startDayWatcher();
       if (!s.onboarded) document.getElementById("onboarding-modal")?.classList.add("show");
       App.setLevelUpCallback((oldRank, newRank) => {
         App.setText("levelup-rank", newRank.id);
@@ -4738,6 +4792,12 @@ window.doReset = doReset;
       App.render();
     },
     activateBadDay() { App.toggleBadDay(); },
+    toggleHabit(id) { App.toggleQuest("habit_" + id); App.render(); },
+    removeHabitFromShell(id) {
+      if (!confirm("Delete this habit?")) return;
+      App.removeHabit(id);
+      App.render();
+    },
     completeConfidence() {
       if (!App.getState().daily.confidenceDone) {
         origCompleteConfidence();
@@ -4814,14 +4874,18 @@ window.doReset = doReset;
       }
     },
     closeOnboarding() {
-      App.completeOnboarding(document.getElementById("settings-name")?.value || "HARSH", new Date().toISOString().slice(0, 10));
+      App.completeOnboarding(document.getElementById("settings-name")?.value || "SHUBHAM", new Date().toISOString().slice(0, 10));
       document.getElementById("onboarding-modal")?.classList.remove("show");
     },
     closeLevelUp() { document.getElementById("levelup-modal")?.classList.remove("show"); },
     addHabitFromShell() {
       const name = document.getElementById("new-habit-name")?.value;
       const xp = document.getElementById("new-habit-xp")?.value || 5;
-      if (name) App.addHabit(name, "custom", xp);
+      if (name) {
+        App.addHabit(name, "custom", xp);
+        const n = document.getElementById("new-habit-name");
+        if (n) n.value = "";
+      }
       App.render();
     },
     setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; },
