@@ -1774,6 +1774,79 @@ body::after {
 }
 .habit-del-btn:active { transform: scale(0.9); background: rgba(220, 38, 38, 0.2); }
 
+/* ====================== v2 — consistency, habits, calendar, dashboard ====================== */
+.cc { display:flex; align-items:center; gap:14px; }
+.cc.done { border-color: rgba(16,185,129,0.35); background: linear-gradient(135deg,var(--glass),rgba(16,185,129,0.06)); }
+.cc-flame { font-size:34px; animation: flameFlicker 1.5s ease-in-out infinite; }
+.cc-mid { flex:1; min-width:0; }
+.cc-num { font-family:'Rajdhani',sans-serif; font-size:40px; font-weight:700; line-height:1; color:var(--gold-bright); }
+.cc-lbl { font-size:11px; color:var(--text-dim); letter-spacing:0.5px; }
+.cc-hint { font-size:11px; color:var(--muted); margin-top:4px; }
+.cc-right { display:flex; flex-direction:column; gap:8px; text-align:right; flex-shrink:0; }
+.cc-sub span { font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700; color:var(--text); display:block; line-height:1; }
+.cc-sub label { font-size:9px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+
+.habit-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:var(--bg2); border:1px solid var(--border); margin-bottom:8px; transition: background .25s, border-color .25s; }
+.habit-row.complete { border-color: rgba(16,185,129,0.3); background: linear-gradient(135deg,var(--bg2),rgba(16,185,129,0.07)); }
+.habit-check { width:28px; height:28px; flex-shrink:0; border-radius:8px; border:1.5px solid var(--border2); background:var(--bg3); display:flex; align-items:center; justify-content:center; font-size:15px; color:transparent; cursor:pointer; transition: all .2s; }
+.habit-row.complete .habit-check { background:rgba(16,185,129,0.2); border-color:var(--green-bright); color:var(--green-bright); animation: checkPop .3s ease; }
+.habit-check:active { transform:scale(0.86); }
+.habit-main { flex:1; min-width:0; cursor:pointer; }
+.habit-name { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.habit-sub { font-size:10px; color:var(--muted); margin-top:2px; }
+.habit-icon-btn { flex-shrink:0; width:30px; height:30px; border-radius:8px; border:1px solid var(--border2); background:var(--bg3); color:var(--text-dim); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition: transform .15s; }
+.habit-icon-btn.danger { border-color:rgba(220,38,38,0.3); background:rgba(220,38,38,0.08); color:var(--red-bright); }
+.habit-icon-btn:active { transform:scale(0.88); }
+
+@keyframes checkPop { 0%{transform:scale(0.5);} 60%{transform:scale(1.18);} 100%{transform:scale(1);} }
+
+.non-neg-item { transition: background .2s, border-color .2s; }
+.non-neg-item:active, .quest-card:active, .tech-card:active, .reward-card:active, .cal-cell:active { transform: scale(0.98); }
+.non-neg-item .non-neg-status { transition: transform .2s, color .2s; }
+.non-neg-item.complete .non-neg-status { animation: checkPop .3s ease; }
+
+/* calendar */
+.cal-wrap { padding:14px; }
+.cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.cal-title { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:15px; letter-spacing:0.5px; }
+.cal-nav { width:34px; height:34px; border-radius:9px; border:1px solid var(--border2); background:var(--bg3); color:var(--text-dim); font-size:18px; cursor:pointer; }
+.cal-nav:active { transform:scale(0.9); }
+.cal-dow-row, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+.cal-dow { text-align:center; font-size:9px; font-weight:700; letter-spacing:1px; color:var(--muted); padding-bottom:4px; }
+.cal-cell { aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600; background:var(--bg3); color:var(--text-dim); border:1px solid transparent; cursor:pointer; transition: transform .12s; }
+.cal-cell.empty { background:transparent; cursor:default; }
+.cal-cell.done { background:rgba(16,185,129,0.22); color:var(--green-bright); border-color:rgba(16,185,129,0.4); }
+.cal-cell.pending { background:rgba(245,158,11,0.15); color:var(--gold-bright); border-color:rgba(245,158,11,0.4); }
+.cal-cell.missed { background:rgba(220,38,38,0.1); color:var(--red-bright); border-color:rgba(220,38,38,0.25); }
+.cal-cell.future, .cal-cell.muted { color:var(--muted); opacity:0.5; }
+.cal-cell.today { box-shadow:0 0 0 2px var(--purple-bright); }
+.cal-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; justify-content:center; font-size:10px; color:var(--muted); }
+.cal-legend span { display:flex; align-items:center; gap:5px; }
+.cal-legend i.lg { width:10px; height:10px; border-radius:3px; display:inline-block; }
+.cal-legend i.done { background:rgba(16,185,129,0.6); }
+.cal-legend i.pending { background:rgba(245,158,11,0.6); }
+.cal-legend i.missed { background:rgba(220,38,38,0.5); }
+.cal-legend i.future { background:var(--muted2); }
+
+/* dashboard tiles */
+.dash-tiles { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.dash-tile { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:14px; text-align:center; }
+.dt-emoji { font-size:20px; }
+.dt-num { font-family:'Rajdhani',sans-serif; font-size:24px; font-weight:700; color:var(--purple-bright); line-height:1; margin-top:4px; }
+.dt-lbl { font-size:10px; color:var(--muted); margin-top:4px; letter-spacing:0.3px; }
+
+/* habit stats modal */
+.hs-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:16px 0; }
+.hs-tile { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center; }
+.hs-num { font-family:'Rajdhani',sans-serif; font-size:26px; font-weight:700; color:var(--purple-bright); line-height:1; }
+.hs-lbl { font-size:10px; color:var(--muted); margin-top:4px; }
+.hs-bar-row { display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); margin:12px 0 6px; }
+.dotgrid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-top:6px; }
+.dot { aspect-ratio:1; border-radius:4px; background:var(--bg3); border:1px solid var(--border); }
+.dot.on { background:var(--green-bright); border-color:var(--green-bright); }
+
+@media (min-width:768px){ .dash-tiles { grid-template-columns:repeat(4,1fr); } .hs-grid { grid-template-columns:repeat(4,1fr); } }
+
 </style>
 </head>
 <body>
@@ -4340,6 +4413,7 @@ window.doReset = doReset;
   const TAB_MAP = { today: "today", roadmap: "roadmap", upsc: "upsc", tech: "tech", body: "body", stats: "stats", rewards: "rewards" };
   let onboardStep = 0;
   let upscExpanded = {};
+  let calView = null;
 
   function hasShell() { return !!document.getElementById("daily-quests"); }
 
@@ -4357,26 +4431,54 @@ window.doReset = doReset;
     return { done, total: list.length, pct: list.length ? done / list.length : 0 };
   }
 
-  function renderShellUI() {
-    if (!hasShell() || !App.getState()) return;
+  // ---- date-map stats (used by consistency counter + per-habit stats) ----
+  function escapeHtml(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function streakOf(dates, today) {
+    dates = dates || {};
+    let n = 0, cur = today;
+    if (!dates[cur]) cur = addDays(today, -1); // grace: today not done yet doesn't zero the streak
+    while (dates[cur]) { n++; cur = addDays(cur, -1); }
+    return n;
+  }
+  function bestOf(dates) {
+    const days = Object.keys(dates || {}).sort();
+    let best = 0, run = 0, prev = null;
+    for (const d of days) { run = (prev && addDays(prev, 1) === d) ? run + 1 : 1; if (run > best) best = run; prev = d; }
+    return best;
+  }
+  function countInRange(dates, today, span) {
+    dates = dates || {};
+    let n = 0;
+    for (let i = 0; i < span; i++) if (dates[addDays(today, -i)]) n++;
+    return n;
+  }
+
+  // Keep the persistent study & per-habit logs in sync with today's live quest state.
+  function syncLogs() {
     const s = App.getState();
+    const today = s.today;
+    s.studyLog = s.studyLog || {};
+    if (s.daily.quests.study_25) s.studyLog[today] = true; else delete s.studyLog[today];
+    s.habitLog = s.habitLog || {};
+    s.habits.forEach(h => {
+      const log = s.habitLog[h.id] || (s.habitLog[h.id] = { dates: {}, best: 0 });
+      if (s.daily.quests["habit_" + h.id]) log.dates[today] = true; else delete log.dates[today];
+      log.best = Math.max(log.best || 0, bestOf(log.dates));
+    });
+    s.consistency = { current: streakOf(s.studyLog, today), best: bestOf(s.studyLog), total: Object.keys(s.studyLog).length };
+  }
+
+  function paintHeader(s) {
     const rank = App.getRank();
-    const rankProg = (() => {
-      const idx = App.RANKS.findIndex(r => r.id === rank.id);
-      const next = App.RANKS[idx + 1];
-      const cur = rank.minXP;
-      const nxt = next ? next.minXP : cur + 1;
-      return { rank, next, pct: next ? (s.lifetimeXP - cur) / (nxt - cur) : 1, toNext: next ? nxt - s.lifetimeXP : 0 };
-    })();
+    const idx = App.RANKS.findIndex(r => r.id === rank.id);
+    const next = App.RANKS[idx + 1];
+    const pct = next ? (s.lifetimeXP - rank.minXP) / (next.minXP - rank.minXP) : 1;
     const dailyXp = s.daily.xp || 0;
     const maxDaily = s.daily.badDay
       ? App.BAD_DAY_MINIMUM.reduce((a, q) => a + q.xp, 0) + 30
       : App.NON_NEGOTIABLE_QUESTS.reduce((a, q) => a + q.xp, 0) + 60;
-    const ws = App.getWeeklyStats();
-    const ms = App.getMonthlyStats();
-    const rd = App.getRoadmapDay();
-    const core = coreStreak();
-
     App.setText("hunter-name", (s.profile.name || "SHUBHAM").toUpperCase());
     App.setText("day-num", dayNum());
     App.setText("day-total", 180);
@@ -4387,15 +4489,14 @@ window.doReset = doReset;
     App.setText("daily-xp-count", `${dailyXp} / ${maxDaily} XP`);
     App.setStyle("daily-xp-fill", "width", Math.min(100, (dailyXp / maxDaily) * 100) + "%");
     App.setText("lifetime-xp-count", `${s.lifetimeXP.toLocaleString()} XP · ${rank.label}`);
-    App.setStyle("lifetime-xp-fill", "width", (rankProg.pct * 100) + "%");
-    App.setText("streak-core-num", (s.streaks.core != null ? s.streaks.core : s.streaks.study) || 0);
+    App.setStyle("lifetime-xp-fill", "width", (pct * 100) + "%");
+    const cons = streakOf(s.studyLog || {}, s.today);
+    App.setText("streak-core-num", cons);
     App.setText("streak-perfect-num", s.streaks.study || 0);
     App.setText("streak-gym-num", s.streaks.workout || 0);
     App.setText("streak-study-num", s.streaks.study || 0);
-
     const banner = document.getElementById("bad-day-banner");
     if (banner) {
-      // Core stays intact as long as the single non-negotiable (25min study) is done.
       const coreIntact = !!s.daily.quests.study_25;
       banner.classList.toggle("active", !coreIntact && !s.daily.badDay);
       banner.classList.toggle("protocol-on", s.daily.badDay);
@@ -4406,26 +4507,66 @@ window.doReset = doReset;
       const btn = banner.querySelector(".bad-day-btn");
       if (btn) btn.textContent = s.daily.badDay ? "ACTIVE ✓" : "ACTIVATE";
     }
+  }
 
-    if (rd) {
-      App.setText("today-date", `${rd.date} · ${rd.studyHours}h target · ${rd.gym ? rd.gym.label : "Rest day"}`);
-    }
+  function renderTodayTab() {
+    const s = App.getState();
+    const rd = App.getRoadmapDay();
+    const core = coreStreak();
+    const ws = App.getWeeklyStats();
+    const ms = App.getMonthlyStats();
+    if (rd) App.setText("today-date", `${rd.date} · ${rd.studyHours}h target · ${rd.gym ? rd.gym.label : "Rest day"}`);
     App.setText("today-progress-badge", `${core.done} / ${core.total}`);
     App.setText("week-xp", ws.totalXP.toLocaleString());
     App.setText("month-xp", ms.totalXP.toLocaleString());
-
+    renderConsistencyCard();
     renderDailyQuests(rd);
     renderNonNeg();
     renderCustomHabits();
     renderConfidence();
-    renderRoadmapTab(rd);
-    renderUpscTab();
-    renderTechTab(rd);
-    renderBodyTab(rd);
-    renderStatsTab();
-    renderRewardsTab();
+  }
 
-    if (s.currentTab === "stats") drawCharts();
+  function renderConsistencyCard() {
+    const s = App.getState();
+    let card = document.getElementById("consistency-card");
+    if (!card) {
+      const today = document.getElementById("tab-today");
+      if (!today) return;
+      card = document.createElement("div");
+      card.className = "section-block";
+      card.id = "consistency-card";
+      card.innerHTML = `<div class="cc glass-card">
+        <div class="cc-flame">🔥</div>
+        <div class="cc-mid"><div class="cc-num" id="cc-num">0</div><div class="cc-lbl">Day consistency streak</div><div class="cc-hint" id="cc-hint"></div></div>
+        <div class="cc-right"><div class="cc-sub"><span id="cc-best">0</span><label>Best</label></div><div class="cc-sub"><span id="cc-total">0</span><label>Total</label></div></div>
+      </div>`;
+      today.insertBefore(card, today.firstChild);
+    }
+    App.setText("cc-num", streakOf(s.studyLog || {}, s.today));
+    App.setText("cc-best", bestOf(s.studyLog || {}));
+    App.setText("cc-total", Object.keys(s.studyLog || {}).length);
+    const done = !!s.daily.quests.study_25;
+    App.setText("cc-hint", done ? "✓ 25-min study logged today" : "Complete your 25-min study to keep it alive");
+    const cc = card.querySelector(".cc");
+    if (cc) cc.classList.toggle("done", done);
+  }
+
+  // Tab-aware: only the visible tab re-renders. This is the core performance fix —
+  // a tap no longer rebuilds all 7 tabs (incl. the huge UPSC syllabus tree) every time.
+  function renderShellUI() {
+    if (!hasShell() || !App.getState()) return;
+    const s = App.getState();
+    paintHeader(s);
+    switch (s.currentTab || "today") {
+      case "today": renderTodayTab(); break;
+      case "roadmap": renderRoadmapTab(App.getRoadmapDay()); break;
+      case "upsc": renderUpscTab(); break;
+      case "tech": renderTechTab(App.getRoadmapDay()); break;
+      case "body": renderBodyTab(App.getRoadmapDay()); break;
+      case "stats": renderStatsTab(); drawCharts(); break;
+      case "rewards": renderRewardsTab(); break;
+      default: renderTodayTab();
+    }
   }
 
   function questCard(q, done, onclick) {
@@ -4494,24 +4635,32 @@ window.doReset = doReset;
       block = document.createElement("div");
       block.className = "section-block";
       block.id = "custom-habits-block";
-      block.innerHTML = `<div class="section-head"><div class="section-title">Custom Quests</div></div><div id="custom-habits-list"></div>
+      block.innerHTML = `<div class="section-head"><div class="section-title">My Habits</div><div class="section-badge">UNLIMITED</div></div>
+        <div id="custom-habits-list"></div>
         <div class="habit-add-row" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-          <input class="input-field" id="new-habit-name" placeholder="Habit name" style="flex:1;min-width:120px;">
-          <input class="input-field" id="new-habit-xp" type="number" placeholder="XP" value="5" style="width:70px;">
-          <button class="btn btn-secondary" onclick="App.addHabitFromShell()">ADD</button>
+          <input class="input-field" id="new-habit-name" placeholder="New habit name" style="flex:1;min-width:120px;">
+          <input class="input-field" id="new-habit-xp" type="number" placeholder="XP" value="5" style="width:64px;">
+          <button class="btn btn-primary" onclick="App.addHabitFromShell()">ADD</button>
         </div>`;
       today.appendChild(block);
     }
     const list = document.getElementById("custom-habits-list");
     if (!list) return;
-    if (!s.habits.length) { list.innerHTML = '<div class="empty-state">Add personal quests above</div>'; return; }
+    if (!s.habits.length) { list.innerHTML = '<div class="empty-state">Add unlimited habits — each keeps its own streak &amp; stats.</div>'; return; }
+    const today = s.today;
     list.innerHTML = s.habits.map(h => {
       const done = !!s.daily.quests["habit_" + h.id];
-      return `<div class="non-neg-item ${done ? "complete" : ""}">
-        <span class="non-neg-icon" style="cursor:pointer;" onclick="App.toggleHabit('${h.id}')">⭐</span>
-        <span class="non-neg-label" style="cursor:pointer;" onclick="App.toggleHabit('${h.id}')">${h.name}</span>
-        <span class="non-neg-status" style="cursor:pointer;" onclick="App.toggleHabit('${h.id}')">${done ? "✓" : "+" + h.xp + " XP"}</span>
-        <button class="habit-del-btn" onclick="App.removeHabitFromShell('${h.id}')" aria-label="Delete habit">×</button></div>`;
+      const log = (s.habitLog && s.habitLog[h.id]) || { dates: {} };
+      const st = streakOf(log.dates, today);
+      return `<div class="habit-row ${done ? "complete" : ""}">
+        <div class="habit-check" onclick="App.toggleHabit('${h.id}')">${done ? "✓" : ""}</div>
+        <div class="habit-main" onclick="App.toggleHabit('${h.id}')">
+          <div class="habit-name">${escapeHtml(h.name)}</div>
+          <div class="habit-sub">🔥 ${st}d streak · +${h.xp} XP</div>
+        </div>
+        <button class="habit-icon-btn" onclick="App.openHabitStats('${h.id}')" aria-label="Stats">📊</button>
+        <button class="habit-icon-btn danger" onclick="App.removeHabitFromShell('${h.id}')" aria-label="Delete">×</button>
+      </div>`;
     }).join("");
   }
 
@@ -4551,12 +4700,68 @@ window.doReset = doReset;
       hm.innerHTML = '<canvas id="heatmap-canvas" style="width:100%;height:120px;"></canvas>';
       setTimeout(() => {
         const c = document.getElementById("heatmap-canvas");
-        if (c && window.Charts) Charts.drawHeatmap("heatmap-canvas", App.getState().xpHistory);
+        if (c) Charts.drawHeatmap("heatmap-canvas", App.getState().xpHistory);
       }, 50);
     }
   }
 
   function renderUpscTab() {
+    renderStudyCalendar();
+    renderUpscSubjects();
+    renderUpscTree();
+  }
+
+  function renderStudyCalendar() {
+    const s = App.getState();
+    let block = document.getElementById("study-calendar-block");
+    if (!block) {
+      const upsc = document.getElementById("tab-upsc");
+      if (!upsc) return;
+      block = document.createElement("div");
+      block.className = "section-block";
+      block.id = "study-calendar-block";
+      block.innerHTML = `<div class="section-head"><div><div class="section-title">Study Calendar</div><div class="section-sub">25-min study — tap a day to log it</div></div></div>
+        <div class="cal-wrap glass-card">
+          <div class="cal-head">
+            <button class="cal-nav" onclick="App.calPrev()">‹</button>
+            <div class="cal-title" id="cal-title"></div>
+            <button class="cal-nav" onclick="App.calNext()">›</button>
+          </div>
+          <div class="cal-dow-row">${["S", "M", "T", "W", "T", "F", "S"].map(d => `<div class="cal-dow">${d}</div>`).join("")}</div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-legend">
+            <span><i class="lg done"></i>Done</span><span><i class="lg pending"></i>Today</span>
+            <span><i class="lg missed"></i>Missed</span><span><i class="lg future"></i>Upcoming</span>
+          </div>
+        </div>`;
+      upsc.insertBefore(block, upsc.firstChild);
+    }
+    if (!calView) { const d = new Date(s.today + "T12:00:00"); calView = { y: d.getFullYear(), m: d.getMonth() }; }
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    App.setText("cal-title", `${monthNames[calView.m]} ${calView.y}`);
+    const firstDow = new Date(calView.y, calView.m, 1).getDay();
+    const dim = new Date(calView.y, calView.m + 1, 0).getDate();
+    const today = s.today, start = s.profile.startDate;
+    const studyLog = s.studyLog || {};
+    const pad2 = n => String(n).padStart(2, "0");
+    let cells = "";
+    for (let i = 0; i < firstDow; i++) cells += `<div class="cal-cell empty"></div>`;
+    for (let d = 1; d <= dim; d++) {
+      const date = `${calView.y}-${pad2(calView.m + 1)}-${pad2(d)}`;
+      const studied = !!studyLog[date];
+      let cls;
+      if (date > today) cls = "future";
+      else if (studied) cls = "done";
+      else if (date === today) cls = "pending";
+      else if (start && date < start) cls = "muted";
+      else cls = "missed";
+      cells += `<div class="cal-cell ${cls}${date === today ? " today" : ""}" onclick="App.toggleStudyDay('${date}')">${d}</div>`;
+    }
+    const grid = document.getElementById("cal-grid");
+    if (grid) grid.innerHTML = cells;
+  }
+
+  function renderUpscSubjects() {
     const s = App.getState();
     const stats = App.getTopicStats();
     const subjRoot = document.getElementById("upsc-subjects");
@@ -4579,6 +4784,10 @@ window.doReset = doReset;
         <div class="progress-bar"><div class="progress-fill lifetime" style="width:0%"></div></div></div>
         <div class="overall-pct">Overall syllabus: ${stats.pct}% complete</div>`;
     }
+  }
+
+  function renderUpscTree() {
+    const s = App.getState();
     const tree = document.getElementById("upsc-tree");
     if (!tree) return;
     let html = "";
@@ -4641,9 +4850,50 @@ window.doReset = doReset;
     });
   }
 
+  function renderDashboard() {
+    const s = App.getState();
+    let block = document.getElementById("dashboard-block");
+    if (!block) {
+      const stats = document.getElementById("tab-stats");
+      if (!stats) return;
+      block = document.createElement("div");
+      block.className = "section-block";
+      block.id = "dashboard-block";
+      block.innerHTML = `<div class="section-head"><div><div class="section-title">Dashboard</div><div class="section-sub">Your discipline at a glance</div></div></div>
+        <div class="dash-tiles" id="dash-tiles"></div>`;
+      stats.insertBefore(block, stats.firstChild);
+    }
+    const today = s.today;
+    const studyLog = s.studyLog || {};
+    const consCur = streakOf(studyLog, today);
+    const consBest = bestOf(studyLog);
+    const consTotal = Object.keys(studyLog).length;
+    const rate30 = Math.round(countInRange(studyLog, today, 30) / 30 * 100);
+    const habitTotal = s.habits.length;
+    const habitDoneToday = s.habits.filter(h => s.daily.quests["habit_" + h.id]).length;
+    const allHabitCompletions = Object.values(s.habitLog || {}).reduce((a, l) => a + Object.keys(l.dates || {}).length, 0);
+    const nn = App.NON_NEGOTIABLE_QUESTS;
+    const nnDone = nn.filter(q => s.daily.quests[q.id]).length;
+    const totalToday = nn.length + habitTotal;
+    const ratePct = totalToday ? Math.round((nnDone + habitDoneToday) / totalToday * 100) : 0;
+    const tiles = [
+      ["🔥", consCur, "Consistency streak"],
+      ["🏆", consBest, "Best streak"],
+      ["📅", consTotal, "Study days total"],
+      ["📈", rate30 + "%", "30-day study rate"],
+      ["✅", ratePct + "%", "Today's completion"],
+      ["⭐", allHabitCompletions, "Habit completions"],
+      ["🧩", habitTotal, "Active habits"],
+      ["💠", s.lifetimeXP.toLocaleString(), "Lifetime XP"],
+    ];
+    const t = document.getElementById("dash-tiles");
+    if (t) t.innerHTML = tiles.map(([e, v, l]) => `<div class="dash-tile"><div class="dt-emoji">${e}</div><div class="dt-num">${v}</div><div class="dt-lbl">${l}</div></div>`).join("");
+  }
+
   function renderStatsTab() {
     const s = App.getState();
-    App.setText("stats-streak-num", s.streaks.study || 0);
+    renderDashboard();
+    App.setText("stats-streak-num", streakOf(s.studyLog || {}, s.today));
     App.setText("stat-days", dayNum());
     App.setText("stat-quests", Object.keys(s.daily.quests).filter(k => s.daily.quests[k]).length);
     App.setText("stat-xp", s.lifetimeXP.toLocaleString());
@@ -4675,7 +4925,7 @@ window.doReset = doReset;
 
   function drawCharts() {
     const data = App.getAnalyticsData();
-    if (window.Charts) {
+    if (typeof Charts !== "undefined") {
       Charts.drawLine("chart-xp", data.xp, { label: "Daily XP (30d)", color: "#a855f7" });
       Charts.drawBar("chart-completion", data.monthly, { label: "Monthly XP" });
       Charts.drawHeatmap("stats-heatmap-canvas", App.getState().xpHistory);
@@ -4685,6 +4935,17 @@ window.doReset = doReset;
       hm.innerHTML = '<canvas id="stats-heatmap-canvas" style="width:100%;height:100px;"></canvas>';
       setTimeout(() => Charts.drawHeatmap("stats-heatmap-canvas", App.getState().xpHistory), 50);
     }
+  }
+
+  function buildHabitStatsModal() {
+    if (document.getElementById("habit-stats-modal")) return;
+    const o = document.createElement("div");
+    o.className = "overlay overlay-center";
+    o.id = "habit-stats-modal";
+    o.setAttribute("onclick", "if(event.target===this)App.closeHabitStats()");
+    o.innerHTML = `<div class="modal-sheet"><div id="hs-body"></div>
+      <button class="btn btn-secondary btn-block mt-12" onclick="App.closeHabitStats()">CLOSE</button></div>`;
+    document.body.appendChild(o);
   }
 
   function showQuestToast(msg, xp) {
@@ -4746,36 +5007,63 @@ window.doReset = doReset;
     })();
   }
 
-  const origRender = App.render.bind(App);
   App.render = function () {
-    origRender();
+    ensureToday();   // rolls the day over (archives + resets) when the date changes
+    syncLogs();      // keep study/habit logs in lockstep with today's quest state
+    saveState();     // persist everything (habits, streaks, logs, calendar) every update
     renderShellUI();
   };
 
   const origInit = App.init.bind(App);
   App.init = function () {
+    // Pre-mark shell tab panels BEFORE core init, so the core builder can't overwrite
+    // the hand-built shell panels (roadmap/rewards) with its own markup.
+    document.querySelectorAll(".tab-panel").forEach(p => { if (p.id.startsWith("tab-")) p.dataset.built = "1"; });
     origInit();
-    if (hasShell()) {
-      document.querySelectorAll(".tab-panel").forEach(p => { if (p.id.startsWith("tab-")) p.dataset.built = "1"; });
-      initParticles();
-      const s = App.getState();
-      // Seed the new "core" streak from the existing study streak for returning hunters.
-      if (s.streaks && s.streaks.core == null) {
-        s.streaks.core = s.streaks.study || 0;
-        s.streakBest = s.streakBest || {};
-        if (s.streakBest.core == null) s.streakBest.core = s.streakBest.study || s.streaks.core || 0;
-        s.streakLast = s.streakLast || {};
-        if (s.streakLast.core == null) s.streakLast.core = s.streakLast.study || null;
-      }
-      startDayWatcher();
-      if (!s.onboarded) document.getElementById("onboarding-modal")?.classList.add("show");
-      App.setLevelUpCallback((oldRank, newRank) => {
-        App.setText("levelup-rank", newRank.id);
-        App.setText("levelup-msg", newRank.label + " — Your power has grown.");
-        document.getElementById("levelup-modal")?.classList.add("show");
-        flashScan();
-      });
+    if (!hasShell()) return;
+    initParticles();
+    buildHabitStatsModal();
+    const s = App.getState();
+    // Seed the "core" streak from the existing study streak for returning hunters.
+    if (s.streaks && s.streaks.core == null) {
+      s.streaks.core = s.streaks.study || 0;
+      s.streakBest = s.streakBest || {};
+      if (s.streakBest.core == null) s.streakBest.core = s.streakBest.study || s.streaks.core || 0;
+      s.streakLast = s.streakLast || {};
+      if (s.streakLast.core == null) s.streakLast.core = s.streakLast.study || null;
     }
+    // One-time migration: rebuild study & per-habit logs from archived day history,
+    // so existing users keep their consistency streak and calendar.
+    if (!s._v2migrated) {
+      s.studyLog = s.studyLog || {};
+      s.habitLog = s.habitLog || {};
+      (s.dayLog || []).forEach(d => {
+        if (d.quests && d.quests.study_25) s.studyLog[d.date] = true;
+        s.habits.forEach(h => {
+          if (d.quests && d.quests["habit_" + h.id]) {
+            (s.habitLog[h.id] = s.habitLog[h.id] || { dates: {}, best: 0 }).dates[d.date] = true;
+          }
+        });
+      });
+      s._v2migrated = true;
+    }
+    // Restore the last-used tab (currentTab is persisted).
+    const valid = ["today", "roadmap", "upsc", "tech", "body", "stats", "rewards"];
+    const startTab = valid.includes(s.currentTab) ? s.currentTab : "today";
+    s.currentTab = startTab;
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".nav-tab").forEach(b => b.classList.remove("active"));
+    document.getElementById("tab-" + startTab)?.classList.add("active");
+    document.querySelector(`[data-tab="${startTab}"]`)?.classList.add("active");
+    startDayWatcher();
+    if (!s.onboarded) document.getElementById("onboarding-modal")?.classList.add("show");
+    App.setLevelUpCallback((oldRank, newRank) => {
+      App.setText("levelup-rank", newRank.id);
+      App.setText("levelup-msg", newRank.label + " — Your power has grown.");
+      document.getElementById("levelup-modal")?.classList.add("show");
+      flashScan();
+    });
+    App.render();
   };
 
   const origCompleteConfidence = App.completeConfidence.bind(App);
@@ -4790,15 +5078,62 @@ window.doReset = doReset;
       App.render();
     },
     activateBadDay() { App.toggleBadDay(); },
-    toggleHabit(id) { App.toggleQuest("habit_" + id); App.render(); },
+    toggleHabit(id) { App.toggleQuest("habit_" + id); },
     removeHabitFromShell(id) {
-      if (!confirm("Delete this habit?")) return;
-      App.removeHabit(id);
+      if (!confirm("Delete this habit? Its history will be removed.")) return;
+      const s = App.getState();
+      if (s.habitLog) delete s.habitLog[id];
+      App.removeHabit(id); // wrapped to re-render
+    },
+    openHabitStats(id) {
+      buildHabitStatsModal();
+      const s = App.getState();
+      const h = s.habits.find(x => x.id === id);
+      if (!h) return;
+      const log = (s.habitLog && s.habitLog[id]) || { dates: {}, best: 0 };
+      const today = s.today;
+      const cur = streakOf(log.dates, today);
+      const best = Math.max(bestOf(log.dates), log.best || 0);
+      const total = Object.keys(log.dates).length;
+      const created = h.created || today;
+      const daysSince = Math.max(1, dayDiff(created, today) + 1);
+      const pct = Math.round(total / daysSince * 100);
+      const wk = countInRange(log.dates, today, 7);
+      const mo = countInRange(log.dates, today, 30);
+      let dots = "";
+      for (let i = 27; i >= 0; i--) { const d = addDays(today, -i); dots += `<div class="dot ${log.dates[d] ? "on" : ""}" title="${d}"></div>`; }
+      const body = document.getElementById("hs-body");
+      if (body) body.innerHTML = `<div class="modal-title">${escapeHtml(h.name)}</div>
+        <div class="modal-sub">Independent habit · started ${created}</div>
+        <div class="hs-grid">
+          <div class="hs-tile"><div class="hs-num">${cur}</div><div class="hs-lbl">Current streak</div></div>
+          <div class="hs-tile"><div class="hs-num">${best}</div><div class="hs-lbl">Longest streak</div></div>
+          <div class="hs-tile"><div class="hs-num">${total}</div><div class="hs-lbl">Total done</div></div>
+          <div class="hs-tile"><div class="hs-num">${pct}%</div><div class="hs-lbl">Completion</div></div>
+        </div>
+        <div class="hs-bar-row"><span>This week</span><span>${wk}/7</span></div>
+        <div class="progress-bar"><div class="progress-fill daily" style="width:${Math.round(wk / 7 * 100)}%"></div></div>
+        <div class="hs-bar-row"><span>This month</span><span>${mo}/30</span></div>
+        <div class="progress-bar"><div class="progress-fill lifetime" style="width:${Math.round(mo / 30 * 100)}%"></div></div>
+        <div class="hs-bar-row"><span>Last 28 days</span><span></span></div>
+        <div class="dotgrid">${dots}</div>`;
+      document.getElementById("habit-stats-modal")?.classList.add("show");
+    },
+    closeHabitStats() { document.getElementById("habit-stats-modal")?.classList.remove("show"); },
+    toggleStudyDay(date) {
+      const s = App.getState();
+      if (date > s.today) return;                       // can't complete the future
+      if (date === s.today) { App.toggleQuest("study_25"); return; } // today routes through the real quest (XP etc.)
+      s.studyLog = s.studyLog || {};
+      if (s.studyLog[date]) delete s.studyLog[date]; else s.studyLog[date] = true;
       App.render();
     },
+    calPrev() { if (calView) { calView.m--; if (calView.m < 0) { calView.m = 11; calView.y--; } renderStudyCalendar(); } },
+    calNext() { if (calView) { calView.m++; if (calView.m > 11) { calView.m = 0; calView.y++; } renderStudyCalendar(); } },
     completeConfidence() {
       if (!App.getState().daily.confidenceDone) {
         origCompleteConfidence();
+        App.render();
         showQuestToast("Confidence quest complete", 8);
         flashScan();
       }
@@ -4890,18 +5225,28 @@ window.doReset = doReset;
     setStyle(id, prop, val) { const el = document.getElementById(id); if (el) el.style[prop] = val; },
   });
 
-  // Patch toggleQuest to show toast
+  // Patch toggleQuest: mutate, refresh the shell, then celebrate.
   const origToggle = App.toggleQuest;
   if (typeof origToggle === "function") {
     App.toggleQuest = function (id) {
       const was = App.getState().daily.quests[id];
       origToggle(id);
+      App.render();
       if (!was && App.getState().daily.quests[id]) {
         const q = [...App.NON_NEGOTIABLE_QUESTS, ...App.BAD_DAY_MINIMUM].find(x => x.id === id);
-        showQuestToast("Quest complete", q?.xp || 10);
+        showQuestToast("Quest complete", q ? q.xp : 10);
+        flashScan();
       }
     };
   }
+
+  // Ensure every core mutation refreshes the (now lightweight) shell so the UI never lags behind.
+  ["completeTopic", "completeGym", "completeTech", "buyReward", "toggleBadDay", "logMetric", "logVape", "logSocial", "logStudyBlock", "toggleTierQuest", "completeReview", "addHabit", "removeHabit"].forEach(name => {
+    if (typeof App[name] === "function") {
+      const orig = App[name].bind(App);
+      App[name] = function () { const r = orig.apply(undefined, arguments); App.render(); return r; };
+    }
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => App.init());
