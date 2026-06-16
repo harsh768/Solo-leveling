@@ -1868,6 +1868,14 @@ body::after {
 .es-lbl { font-size:11px; color:var(--text-dim); margin-top:5px; font-family:'Rajdhani',sans-serif; letter-spacing:0.3px; }
 .es-btn { width:44px; height:44px; font-size:24px; flex-shrink:0; border-radius:12px; }
 
+/* editable reward shop */
+.reward-card { position:relative; }
+.reward-edit-btns { position:absolute; top:6px; right:6px; display:flex; gap:4px; z-index:2; }
+.rw-mini { width:24px; height:24px; border-radius:7px; border:1px solid var(--border2); background:var(--bg3); color:var(--text-dim); font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; }
+.rw-mini.danger { border-color:rgba(220,38,38,0.3); background:rgba(220,38,38,0.08); color:var(--red-bright); }
+.rw-mini:active { transform:scale(0.86); }
+.reward-add-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
 /* redeemed-reward history */
 .redeemed-list { display:flex; flex-direction:column; gap:6px; }
 .redeemed-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg2); border:1px solid var(--border); border-radius:10px; font-size:12px; }
@@ -2442,25 +2450,26 @@ const RANKS = [
 // ============================================================================
 // REWARDS SHOP
 // ============================================================================
-// Tiered rewards: small daily treats are cheap & frequent; big ones are rare milestones.
-// Costs are tuned to the new (harder) XP economy — ~80–250 = an evening's earnings.
+// Default reward shop — seeded into state on first load, then fully editable by the user.
+// Costs are tuned to the harder XP economy (~180–200 XP on a peak day): even a small
+// treat is roughly a day-and-a-half of solid work, so nothing is a freebie.
 const REWARDS_SHOP = [
-  // ── Small treats (daily-affordable) ──
-  { id: "rice", label: "Bowl of Rice", emoji: "🍚", cost: 80, desc: "One guilt-free serving of rice" },
-  { id: "tea_coffee", label: "Tea / Coffee", emoji: "☕", cost: 100, desc: "A warm cup, earned" },
-  { id: "snack", label: "Favourite Snack", emoji: "🍫", cost: 120, desc: "One small snack of choice" },
-  { id: "insta30", label: "Instagram 30 min", emoji: "📱", cost: 150, desc: "Guilt-free scroll session" },
-  { id: "dessert", label: "Sweet / Dessert", emoji: "🍰", cost: 180, desc: "One dessert, no guilt" },
-  { id: "episode", label: "1 Episode", emoji: "📺", cost: 250, desc: "Watch one episode" },
-  // ── Medium rewards ──
-  { id: "cheat_meal", label: "Cheat Meal", emoji: "🍔", cost: 500, desc: "One guilt-free feast" },
-  { id: "gaming", label: "Gaming Session", emoji: "🎮", cost: 600, desc: "2 hours of gaming" },
-  { id: "movie", label: "Movie Night", emoji: "🎬", cost: 800, desc: "Cinema or OTT marathon" },
-  { id: "rest_day", label: "Rest Day Pass", emoji: "😴", cost: 900, desc: "Skip gym without streak loss" },
-  { id: "drinks", label: "Drinks with Friends", emoji: "🍻", cost: 1400, desc: "One social outing" },
+  // ── Small treats (a few good days) ──
+  { id: "rice", label: "Bowl of Rice", emoji: "🍚", cost: 300, desc: "One guilt-free serving of rice" },
+  { id: "tea_coffee", label: "Tea / Coffee", emoji: "☕", cost: 350, desc: "A warm cup, earned" },
+  { id: "snack", label: "Favourite Snack", emoji: "🍫", cost: 450, desc: "One small snack of choice" },
+  { id: "dessert", label: "Sweet / Dessert", emoji: "🍰", cost: 550, desc: "One dessert, no guilt" },
+  { id: "insta30", label: "Instagram 30 min", emoji: "📱", cost: 600, desc: "Guilt-free scroll session" },
+  { id: "episode", label: "1 Episode", emoji: "📺", cost: 750, desc: "Watch one episode" },
+  // ── Medium rewards (about a week) ──
+  { id: "cheat_meal", label: "Cheat Meal", emoji: "🍔", cost: 1500, desc: "One guilt-free feast" },
+  { id: "gaming", label: "Gaming Session", emoji: "🎮", cost: 1800, desc: "2 hours of gaming" },
+  { id: "movie", label: "Movie Night", emoji: "🎬", cost: 2200, desc: "Cinema or OTT marathon" },
+  { id: "rest_day", label: "Rest Day Pass", emoji: "😴", cost: 2800, desc: "Skip gym without streak loss" },
+  { id: "drinks", label: "Drinks with Friends", emoji: "🍻", cost: 4000, desc: "One social outing" },
   // ── Major milestones (rare) ──
-  { id: "weekend_outing", label: "Weekend Outing", emoji: "🚗", cost: 3000, desc: "Half-day adventure" },
-  { id: "expensive", label: "Buy Something Nice", emoji: "🛍️", cost: 5000, desc: "Reward yourself properly" },
+  { id: "weekend_outing", label: "Weekend Outing", emoji: "🚗", cost: 8000, desc: "Half-day adventure" },
+  { id: "expensive", label: "Buy Something Nice", emoji: "🛍️", cost: 14000, desc: "Reward yourself properly" },
 ];
 
 // ============================================================================
@@ -3031,6 +3040,7 @@ function defaultState() {
     habits: [],
     habitLog: {},
     rewards: { redeemed: [] },
+    rewardsShop: [],
     vape: { quitDate: t, totalPuffs: 0, dailyPuffs: 0, cravings: 0, moneyPerPack: 350, puffsPerPack: 600, log: [] },
     social: { insta: 0, ytShorts: 0, reddit: 0, twitter: 0, screenTime: 0, deepWork: 0 },
     nutrition: { calories: 0, protein: 0, water: 0, junk: 0, targetCal: 1800, targetProtein: 100, targetWater: 3 },
@@ -3715,7 +3725,7 @@ function toggleHabit(id) {
 // REWARDS SHOP
 // ============================================================================
 function buyReward(id) {
-  const reward = REWARDS_SHOP.find(r => r.id === id);
+  const reward = (state.rewardsShop || []).find(r => r.id === id) || REWARDS_SHOP.find(r => r.id === id);
   if (!reward) return;
   const avail = availableXP();
   if (avail < reward.cost) { Sound.error(); showToast(`Need ${reward.cost - avail} more XP`); return; }
@@ -3723,6 +3733,38 @@ function buyReward(id) {
   state.rewards.redeemed.push({ id, label: reward.label, emoji: reward.emoji, date: state.today, cost: reward.cost });
   Sound.reward();
   showToast(`${reward.emoji} ${reward.label} claimed · −${reward.cost} XP · ${availableXP().toLocaleString()} left`);
+  saveState();
+  render();
+}
+
+// ── Reward shop CRUD (user-editable) ──
+function addReward(label, cost, emoji = "🎁", desc = "") {
+  state.rewardsShop = state.rewardsShop || [];
+  const name = (label || "").trim();
+  const c = Math.max(1, Math.round(parseInt(cost, 10) || 0));
+  if (!name || !c) { Sound.error(); showToast("Enter a name and a cost"); return false; }
+  state.rewardsShop.push({ id: uid(), label: name, cost: c, emoji: (emoji || "🎁").trim() || "🎁", desc: (desc || "").trim() });
+  Sound.quest();
+  showToast(`✦ ${name} added to the shop`);
+  saveState();
+  render();
+  return true;
+}
+
+function editReward(id, data) {
+  const r = (state.rewardsShop || []).find(x => x.id === id);
+  if (!r) return false;
+  if (data.label != null && data.label.trim()) r.label = data.label.trim();
+  if (data.emoji != null && data.emoji.trim()) r.emoji = data.emoji.trim();
+  if (data.cost != null && parseInt(data.cost, 10) > 0) r.cost = Math.round(parseInt(data.cost, 10));
+  if (data.desc != null) r.desc = data.desc.trim();
+  saveState();
+  render();
+  return true;
+}
+
+function deleteReward(id) {
+  state.rewardsShop = (state.rewardsShop || []).filter(r => r.id !== id);
   saveState();
   render();
 }
@@ -4996,17 +5038,65 @@ window.doReset = doReset;
     }
   }
 
+  function ensureRewardAddForm() {
+    if (document.getElementById("reward-add-form")) return;
+    const tab = document.getElementById("tab-rewards");
+    if (!tab) return;
+    const block = document.createElement("div");
+    block.className = "section-block";
+    block.id = "reward-add-form";
+    block.innerHTML = `<div class="section-head"><div class="section-title">Add a Reward</div></div>
+      <div class="reward-add-row">
+        <input class="input-field" id="rw-new-emoji" placeholder="🎁" maxlength="2" style="width:54px;text-align:center;">
+        <input class="input-field" id="rw-new-name" placeholder="Reward name" style="flex:1;min-width:120px;">
+        <input class="input-field" id="rw-new-cost" type="number" placeholder="XP" style="width:88px;">
+        <button class="btn btn-primary" onclick="App.addRewardFromShell()">ADD</button>
+      </div>`;
+    const balance = tab.querySelector(".xp-balance-card");
+    if (balance && balance.nextSibling) tab.insertBefore(block, balance.nextSibling);
+    else tab.insertBefore(block, tab.firstChild);
+  }
+
+  function buildRewardEditModal() {
+    if (document.getElementById("reward-edit-modal")) return;
+    const o = document.createElement("div");
+    o.className = "overlay overlay-center";
+    o.id = "reward-edit-modal";
+    o.setAttribute("onclick", "if(event.target===this)App.closeRewardEdit()");
+    o.innerHTML = `<div class="modal-sheet">
+      <div class="modal-title">Edit Reward</div>
+      <input type="hidden" id="rw-edit-id">
+      <div class="input-group"><label class="input-label">Emoji</label><input class="input-field" id="rw-edit-emoji" maxlength="2"></div>
+      <div class="input-group"><label class="input-label">Name</label><input class="input-field" id="rw-edit-name"></div>
+      <div class="input-group"><label class="input-label">Cost (XP)</label><input class="input-field" id="rw-edit-cost" type="number"></div>
+      <div class="input-group"><label class="input-label">Description</label><input class="input-field" id="rw-edit-desc"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary btn-block" onclick="App.saveRewardEdit()">SAVE</button>
+        <button class="btn btn-secondary btn-block" style="border-color:rgba(220,38,38,0.3);color:var(--red-bright);" onclick="App.deleteRewardFromShell(document.getElementById('rw-edit-id').value, true)">DELETE</button>
+        <button class="btn btn-ghost btn-block" onclick="App.closeRewardEdit()">CANCEL</button>
+      </div></div>`;
+    document.body.appendChild(o);
+  }
+
   function renderRewardsTab() {
-    const avail = App.getState().lifetimeXP - (App.getState().spentXP || 0);
+    const s = App.getState();
+    const avail = s.lifetimeXP - (s.spentXP || 0);
     App.setText("reward-xp-balance", avail.toLocaleString());
+    ensureRewardAddForm();
     const root = document.getElementById("reward-cards");
     if (!root) return;
-    root.innerHTML = App.REWARDS_SHOP.map(r => {
+    const shop = (s.rewardsShop && s.rewardsShop.length) ? s.rewardsShop.slice() : App.REWARDS_SHOP.slice();
+    shop.sort((a, b) => a.cost - b.cost);
+    root.innerHTML = shop.map(r => {
       const can = avail >= r.cost;
       return `<div class="reward-card glass-card ${can ? "" : "locked"}" onclick="App.buyReward('${r.id}')">
-        <div class="reward-emoji">${r.emoji}</div><div class="reward-name">${r.label}</div>
-        <div class="reward-cost">${r.cost} XP</div><div class="reward-desc">${r.desc}</div></div>`;
-    }).join("");
+        <div class="reward-edit-btns">
+          <button class="rw-mini" onclick="event.stopPropagation();App.openRewardEdit('${r.id}')" aria-label="Edit">✎</button>
+          <button class="rw-mini danger" onclick="event.stopPropagation();App.deleteRewardFromShell('${r.id}')" aria-label="Delete">×</button>
+        </div>
+        <div class="reward-emoji">${r.emoji}</div><div class="reward-name">${escapeHtml(r.label)}</div>
+        <div class="reward-cost">${(r.cost || 0).toLocaleString()} XP</div><div class="reward-desc">${escapeHtml(r.desc || "")}</div></div>`;
+    }).join("") || '<div class="empty-state">No rewards yet. Add one above.</div>';
     renderRedeemedHistory();
   }
 
@@ -5157,6 +5247,12 @@ window.doReset = doReset;
       });
       s._v2migrated = true;
     }
+    // Seed the editable reward shop once (from the rebalanced defaults). After this the
+    // user owns the list — add/edit/delete persist and we never silently re-seed.
+    if (!s._rewardsSeeded) {
+      s.rewardsShop = REWARDS_SHOP.map(r => ({ ...r }));
+      s._rewardsSeeded = true;
+    }
     // Restore the last-used tab (currentTab is persisted).
     const valid = ["today", "roadmap", "upsc", "tech", "body", "stats", "rewards"];
     const startTab = valid.includes(s.currentTab) ? s.currentTab : "today";
@@ -5188,6 +5284,46 @@ window.doReset = doReset;
       App.render();
     },
     activateBadDay() { App.toggleBadDay(); },
+    addRewardFromShell() {
+      const emoji = document.getElementById("rw-new-emoji")?.value || "🎁";
+      const name = document.getElementById("rw-new-name")?.value;
+      const cost = document.getElementById("rw-new-cost")?.value;
+      if (addReward(name, cost, emoji)) {
+        const n = document.getElementById("rw-new-name"); if (n) n.value = "";
+        const c = document.getElementById("rw-new-cost"); if (c) c.value = "";
+        const e = document.getElementById("rw-new-emoji"); if (e) e.value = "";
+      }
+      App.render();
+    },
+    openRewardEdit(id) {
+      buildRewardEditModal();
+      const r = (App.getState().rewardsShop || []).find(x => x.id === id);
+      if (!r) return;
+      document.getElementById("rw-edit-id").value = r.id;
+      document.getElementById("rw-edit-emoji").value = r.emoji || "";
+      document.getElementById("rw-edit-name").value = r.label || "";
+      document.getElementById("rw-edit-cost").value = r.cost || "";
+      document.getElementById("rw-edit-desc").value = r.desc || "";
+      document.getElementById("reward-edit-modal")?.classList.add("show");
+    },
+    saveRewardEdit() {
+      const id = document.getElementById("rw-edit-id")?.value;
+      editReward(id, {
+        emoji: document.getElementById("rw-edit-emoji")?.value,
+        label: document.getElementById("rw-edit-name")?.value,
+        cost: document.getElementById("rw-edit-cost")?.value,
+        desc: document.getElementById("rw-edit-desc")?.value,
+      });
+      App.closeRewardEdit();
+      App.render();
+    },
+    closeRewardEdit() { document.getElementById("reward-edit-modal")?.classList.remove("show"); },
+    deleteRewardFromShell(id, fromModal) {
+      if (!id || !confirm("Delete this reward?")) return;
+      deleteReward(id);
+      if (fromModal) App.closeRewardEdit();
+      App.render();
+    },
     logExtraStudy(delta) {
       const s = App.getState();
       const cur = s.daily.extraStudyMin || 0;
