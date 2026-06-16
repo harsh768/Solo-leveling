@@ -1861,6 +1861,19 @@ body::after {
 @keyframes calFade { from { opacity:0; transform:translateY(4px);} to { opacity:1; transform:translateY(0);} }
 .settings-version { text-align:center; font-size:10px; color:var(--muted); margin-top:16px; letter-spacing:1.5px; font-family:'Rajdhani',sans-serif; }
 
+/* extra-study bonus card */
+.es-card { display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.es-mid { text-align:center; flex:1; }
+.es-num { font-family:'Rajdhani',sans-serif; font-size:30px; font-weight:700; color:var(--green-bright); line-height:1; }
+.es-lbl { font-size:11px; color:var(--text-dim); margin-top:5px; font-family:'Rajdhani',sans-serif; letter-spacing:0.3px; }
+.es-btn { width:44px; height:44px; font-size:24px; flex-shrink:0; border-radius:12px; }
+
+/* redeemed-reward history */
+.redeemed-list { display:flex; flex-direction:column; gap:6px; }
+.redeemed-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--bg2); border:1px solid var(--border); border-radius:10px; font-size:12px; }
+.redeemed-item .ri-cost { font-family:'Rajdhani',sans-serif; font-weight:700; color:var(--red-bright); }
+.redeemed-item .ri-date { font-size:10px; color:var(--muted); }
+
 /* snappier taps on iOS — removes gesture delay on interactive elements */
 .btn, .btn-icon, .non-neg-item, .habit-row, .habit-check, .habit-icon-btn, .quest-card, .tech-card,
 .reward-card, .nav-tab, .cal-cell, .cal-nav, .settings-btn, .tree-head, .tree-topic, .confidence-actions button { touch-action: manipulation; }
@@ -1913,9 +1926,9 @@ body::after {
 
     <div class="streak-row">
       <div class="streak-pill fire" id="streak-core">🔥 Core <span id="streak-core-num">0</span>d</div>
-      <div class="streak-pill" id="streak-perfect">⭐ Perfect <span id="streak-perfect-num">0</span>d</div>
+      <div class="streak-pill" id="streak-perfect">📚 Study <span id="streak-perfect-num">0</span>d</div>
       <div class="streak-pill" id="streak-gym">💪 Gym <span id="streak-gym-num">0</span>d</div>
-      <div class="streak-pill" id="streak-study">📚 Study <span id="streak-study-num">0</span>d</div>
+      <div class="streak-pill" id="streak-study">💻 Tech <span id="streak-study-num">0</span>d</div>
     </div>
   </header>
 
@@ -2382,7 +2395,7 @@ body::after {
       <p class="modal-sub" style="text-align:left;margin-bottom:12px;">Reset all progress. This cannot be undone.</p>
       <button class="btn btn-secondary btn-block" style="border-color:rgba(220,38,38,0.3);color:var(--red-bright);" onclick="App.confirmReset()">RESET ALL DATA</button>
     </div>
-    <div class="settings-version">THE SYSTEM · BUILD 2.2</div>
+    <div class="settings-version">THE SYSTEM · BUILD 2.3</div>
   </div>
 </div>
 
@@ -2412,30 +2425,42 @@ const DEFAULT_PROFILE = {
 // ============================================================================
 // RANK PROGRESSION (lifetime XP thresholds)
 // ============================================================================
+// Rank thresholds tuned so that even at peak daily performance (~180–200 XP/day),
+// reaching S-Rank takes roughly 6–8 months. Each tier is a real, earned grind.
 const RANKS = [
   { id: "E", label: "E-Rank Hunter", minXP: 0, color: "#4b4b5b" },
-  { id: "D", label: "D-Rank Hunter", minXP: 500, color: "#6b7280" },
-  { id: "C", label: "C-Rank Hunter", minXP: 2000, color: "#10b981" },
-  { id: "B", label: "B-Rank Hunter", minXP: 5000, color: "#3b82f6" },
-  { id: "A", label: "A-Rank Hunter", minXP: 12000, color: "#a855f7" },
-  { id: "S", label: "S-Rank Hunter", minXP: 25000, color: "#f59e0b" },
-  { id: "NRH", label: "National Rank Hunter", minXP: 50000, color: "#ef4444" },
+  { id: "D", label: "D-Rank Hunter", minXP: 2000, color: "#6b7280" },
+  { id: "C", label: "C-Rank Hunter", minXP: 6000, color: "#10b981" },
+  { id: "B", label: "B-Rank Hunter", minXP: 12000, color: "#3b82f6" },
+  { id: "A", label: "A-Rank Hunter", minXP: 22000, color: "#a855f7" },
+  { id: "S", label: "S-Rank Hunter", minXP: 36000, color: "#f59e0b" },
+  { id: "NRH", label: "National Rank Hunter", minXP: 60000, color: "#ef4444" },
   { id: "MC", label: "Monarch Candidate", minXP: 100000, color: "#ec4899" },
-  { id: "SM", label: "Shadow Monarch", minXP: 200000, color: "#fde047" },
+  { id: "SM", label: "Shadow Monarch", minXP: 175000, color: "#fde047" },
 ];
 
 // ============================================================================
 // REWARDS SHOP
 // ============================================================================
+// Tiered rewards: small daily treats are cheap & frequent; big ones are rare milestones.
+// Costs are tuned to the new (harder) XP economy — ~80–250 = an evening's earnings.
 const REWARDS_SHOP = [
-  { id: "cheat_meal", label: "Cheat Meal", emoji: "🍔", cost: 1000, desc: "One guilt-free feast" },
-  { id: "movie", label: "Movie Night", emoji: "🎬", cost: 1500, desc: "Cinema or OTT marathon" },
-  { id: "instagram", label: "Instagram 2 Hours", emoji: "📱", cost: 2500, desc: "Guilt-free scroll session" },
-  { id: "coffee", label: "Buy Coffee", emoji: "☕", cost: 3500, desc: "Premium coffee treat" },
-  { id: "drinks", label: "Drink with Friends", emoji: "🍻", cost: 5000, desc: "One social drink outing" },
-  { id: "weekend_outing", label: "Weekend Outing", emoji: "🚗", cost: 7000, desc: "Half-day adventure" },
-  { id: "expensive", label: "Buy Something Nice", emoji: "🛍️", cost: 10000, desc: "Reward yourself properly" },
-  { id: "rest_day", label: "Rest Day Pass", emoji: "😴", cost: 2000, desc: "Skip gym without streak loss" },
+  // ── Small treats (daily-affordable) ──
+  { id: "rice", label: "Bowl of Rice", emoji: "🍚", cost: 80, desc: "One guilt-free serving of rice" },
+  { id: "tea_coffee", label: "Tea / Coffee", emoji: "☕", cost: 100, desc: "A warm cup, earned" },
+  { id: "snack", label: "Favourite Snack", emoji: "🍫", cost: 120, desc: "One small snack of choice" },
+  { id: "insta30", label: "Instagram 30 min", emoji: "📱", cost: 150, desc: "Guilt-free scroll session" },
+  { id: "dessert", label: "Sweet / Dessert", emoji: "🍰", cost: 180, desc: "One dessert, no guilt" },
+  { id: "episode", label: "1 Episode", emoji: "📺", cost: 250, desc: "Watch one episode" },
+  // ── Medium rewards ──
+  { id: "cheat_meal", label: "Cheat Meal", emoji: "🍔", cost: 500, desc: "One guilt-free feast" },
+  { id: "gaming", label: "Gaming Session", emoji: "🎮", cost: 600, desc: "2 hours of gaming" },
+  { id: "movie", label: "Movie Night", emoji: "🎬", cost: 800, desc: "Cinema or OTT marathon" },
+  { id: "rest_day", label: "Rest Day Pass", emoji: "😴", cost: 900, desc: "Skip gym without streak loss" },
+  { id: "drinks", label: "Drinks with Friends", emoji: "🍻", cost: 1400, desc: "One social outing" },
+  // ── Major milestones (rare) ──
+  { id: "weekend_outing", label: "Weekend Outing", emoji: "🚗", cost: 3000, desc: "Half-day adventure" },
+  { id: "expensive", label: "Buy Something Nice", emoji: "🛍️", cost: 5000, desc: "Reward yourself properly" },
 ];
 
 // ============================================================================
@@ -2454,11 +2479,8 @@ const GYM_ROTATION = [
 // TECH TRACKS (daily rotation)
 // ============================================================================
 const TECH_TRACKS = [
-  { id: "dsa", label: "DSA Problem", emoji: "💻", xp: 15, sub: "Algorithms & data structures" },
-  { id: "system_design", label: "System Design", emoji: "🏗️", xp: 20, sub: "Architecture patterns" },
-  { id: "security", label: "Security", emoji: "🔐", xp: 15, sub: "OWASP, auth, crypto" },
-  { id: "backend", label: "Backend Dev", emoji: "⚙️", xp: 15, sub: "APIs, DBs, caching" },
-  { id: "leetcode", label: "Leetcode", emoji: "🧩", xp: 12, sub: "Contest prep rotation" },
+  { id: "dsa", label: "DSA Problem", emoji: "💻", xp: 18, sub: "Algorithms & data structures" },
+  { id: "system_design", label: "System Design", emoji: "🏗️", xp: 22, sub: "Architecture & scalability" },
 ];
 
 // ============================================================================
@@ -2480,35 +2502,17 @@ const CONFIDENCE_QUESTS = [
 // ============================================================================
 // NON-NEGOTIABLE QUESTS (streak-critical)
 // ============================================================================
+// The single non-negotiable that keeps the Core streak alive: 1 hour of deep study.
+// (id stays "study_25" so existing study logs, calendar & consistency streak carry over.)
 const NON_NEGOTIABLE_QUESTS = [
-  { id: "study_25", label: "25min UPSC Study", emoji: "📚", xp: 15, category: "study", streakKey: "study" },
-  { id: "ca", label: "Current Affairs", emoji: "📰", xp: 10, category: "upsc", streakKey: "ca" },
-  { id: "math_pyq", label: "1 Math PYQ", emoji: "🔢", xp: 12, category: "math" },
-  { id: "upsc_pyq", label: "1 UPSC PYQ", emoji: "📝", xp: 10, category: "upsc" },
-  { id: "prelims_pyq", label: "5 Prelims PYQs", emoji: "✅", xp: 15, category: "upsc" },
-  { id: "brush", label: "Brush Teeth (2x)", emoji: "🦷", xp: 5, category: "hygiene" },
-  { id: "bath", label: "Bath / Shower", emoji: "🚿", xp: 5, category: "hygiene" },
-  { id: "skincare", label: "Skincare Routine", emoji: "✨", xp: 5, category: "hygiene" },
-  { id: "protein_100", label: "100g Protein", emoji: "🥩", xp: 10, category: "nutrition", streakKey: "cleanEating" },
-  { id: "walk", label: "Morning Walk", emoji: "🌅", xp: 8, category: "fitness" },
-  { id: "read", label: "Read 20 Pages", emoji: "📖", xp: 10, category: "growth", streakKey: "reading" },
-  { id: "journal", label: "Journal Entry", emoji: "📓", xp: 8, category: "growth" },
-  { id: "hydration", label: "3L Water", emoji: "💧", xp: 8, category: "nutrition", streakKey: "water" },
-  { id: "sleep", label: "Sleep by 12am", emoji: "🌙", xp: 10, category: "recovery", streakKey: "sleep" },
+  { id: "study_25", label: "1 Hour Deep Study", emoji: "📚", xp: 30, category: "study", streakKey: "study" },
 ];
 
 // ============================================================================
-// BAD DAY PROTOCOL — minimum quests
+// BAD DAY PROTOCOL — bare minimum to protect the streak
 // ============================================================================
 const BAD_DAY_MINIMUM = [
-  { id: "study_25", label: "25min Study", emoji: "📚", xp: 15, streakKey: "study" },
-  { id: "ca", label: "Current Affairs", emoji: "📰", xp: 10, streakKey: "ca" },
-  { id: "walk", label: "Walk / 10k Steps", emoji: "🌅", xp: 8 },
-  { id: "hydration", label: "2L Water", emoji: "💧", xp: 5, streakKey: "water" },
-  { id: "protein_100", label: "80g+ Protein", emoji: "🥩", xp: 8 },
-  { id: "brush", label: "Brush Teeth", emoji: "🦷", xp: 5 },
-  { id: "bath", label: "Bath / Shower", emoji: "🚿", xp: 5 },
-  { id: "sleep", label: "Sleep 7+ hrs", emoji: "🌙", xp: 8, streakKey: "sleep" },
+  { id: "study_25", label: "25min Study (minimum)", emoji: "📚", xp: 15, streakKey: "study" },
 ];
 
 // ============================================================================
@@ -3049,6 +3053,7 @@ function freshDaily() {
     confidence: null,
     confidenceDone: false,
     badDay: false,
+    extraStudyMin: 0,
     xp: 0,
   };
 }
@@ -3335,11 +3340,8 @@ function renderConfidenceDetail() {
 // TECH TRACK RESOURCES — suggested focus per track
 // ============================================================================
 const TECH_RESOURCES = {
-  dsa: ["Leetcode daily", "Neetcode roadmap", "Striver's sheet", "Binary search trees", "Graph BFS/DFS"],
-  system_design: ["Designing Data-Intensive Apps", "System Design Primer", "ByteByteGo", "URL shortener design", "Cache patterns"],
-  security: ["OWASP Top 10", "JWT best practices", "SQL injection prevention", "HTTPS/TLS", "Auth flows"],
-  backend: ["REST API design", "PostgreSQL indexing", "Redis caching", "Message queues", "Microservices patterns"],
-  leetcode: ["Weekly contest", "Top 150", "Company-specific sets", "Timed practice", "Pattern recognition"],
+  dsa: ["Leetcode daily", "Neetcode roadmap", "Striver's sheet", "Binary search trees", "Graph BFS/DFS", "DP patterns"],
+  system_design: ["Designing Data-Intensive Apps", "System Design Primer", "ByteByteGo", "URL shortener design", "Cache patterns", "Load balancing & sharding"],
 };
 
 function renderTechResources() {
@@ -3543,18 +3545,12 @@ function updateStreak(key, success) {
 
 function updateStreaksOnArchive(date) {
   const q = state.daily.quests;
-  // Core (main) streak survives as long as the single non-negotiable — 25min study — is done.
+  // Core (main) streak survives as long as the single non-negotiable — the 1-hour study — is done.
   updateStreak("core", !!q.study_25);
   updateStreak("study", !!q.study_25);
-  updateStreak("ca", !!q.ca);
-  updateStreak("reading", !!q.read);
-  updateStreak("water", !!q.hydration);
-  updateStreak("sleep", !!q.sleep);
-  updateStreak("cleanEating", !!q.protein_100 && (state.nutrition.junk || 0) === 0);
   updateStreak("workout", state.daily.gymDone);
   updateStreak("tech", state.daily.techDone);
-  const vapeOk = (state.vape.dailyPuffs || 0) === 0;
-  updateStreak("noVape", vapeOk);
+  updateStreak("noVape", (state.vape.dailyPuffs || 0) === 0);
 }
 
 function checkCoreComplete() {
@@ -3724,9 +3720,9 @@ function buyReward(id) {
   const avail = availableXP();
   if (avail < reward.cost) { Sound.error(); showToast(`Need ${reward.cost - avail} more XP`); return; }
   state.spentXP = (state.spentXP || 0) + reward.cost;
-  state.rewards.redeemed.push({ id, label: reward.label, date: state.today, cost: reward.cost });
+  state.rewards.redeemed.push({ id, label: reward.label, emoji: reward.emoji, date: state.today, cost: reward.cost });
   Sound.reward();
-  showToast(`${reward.emoji} ${reward.label} redeemed!`);
+  showToast(`${reward.emoji} ${reward.label} claimed · −${reward.cost} XP · ${availableXP().toLocaleString()} left`);
   saveState();
   render();
 }
@@ -4441,7 +4437,7 @@ window.doReset = doReset;
     return Math.min(180, Math.floor((new Date(s.today + "T12:00:00") - new Date(s.profile.startDate + "T12:00:00")) / 86400000) + 1);
   }
 
-  function calcLevel(xp) { return Math.max(1, Math.floor(xp / 500) + 1); }
+  function calcLevel(xp) { return Math.max(1, Math.floor(xp / 750) + 1); }
 
   function coreStreak() {
     const s = App.getState();
@@ -4513,7 +4509,7 @@ window.doReset = doReset;
     App.setText("streak-core-num", cons);
     App.setText("streak-perfect-num", s.streaks.study || 0);
     App.setText("streak-gym-num", s.streaks.workout || 0);
-    App.setText("streak-study-num", s.streaks.study || 0);
+    App.setText("streak-study-num", s.streaks.tech || 0);
     const banner = document.getElementById("bad-day-banner");
     if (banner) {
       const coreIntact = !!s.daily.quests.study_25;
@@ -4521,8 +4517,8 @@ window.doReset = doReset;
       banner.classList.toggle("protocol-on", s.daily.badDay);
       const sub = banner.querySelector(".bad-day-sub");
       if (sub) sub.textContent = s.daily.badDay
-        ? "Protocol active — minimum quests protect your streak."
-        : "Core streak needs your 25min study today. Do it, or activate protocol.";
+        ? "Protocol active — a 25-min minimum protects your streak today."
+        : "Core streak needs your 1-hour study today. Do it, or activate protocol.";
       const btn = banner.querySelector(".bad-day-btn");
       if (btn) btn.textContent = s.daily.badDay ? "ACTIVE ✓" : "ACTIVATE";
     }
@@ -4540,9 +4536,36 @@ window.doReset = doReset;
     App.setText("month-xp", ms.totalXP.toLocaleString());
     renderConsistencyCard();
     renderDailyQuests(rd);
+    renderExtraStudyCard();
     renderNonNeg();
     renderCustomHabits();
     renderConfidence();
+  }
+
+  // Extra-study bonus: anything beyond the 1-hour non-negotiable earns +10 XP per 30 min.
+  function renderExtraStudyCard() {
+    const s = App.getState();
+    let card = document.getElementById("extra-study-block");
+    if (!card) {
+      const today = document.getElementById("tab-today");
+      if (!today) return;
+      card = document.createElement("div");
+      card.className = "section-block";
+      card.id = "extra-study-block";
+      card.innerHTML = `<div class="section-head"><div><div class="section-title">Extra Study Bonus</div><div class="section-sub">Beyond your 1-hour core · +10 XP per extra 30 min</div></div><div class="section-badge" style="border-color:rgba(16,185,129,0.3);color:var(--green-bright);background:rgba(16,185,129,0.08);">BONUS</div></div>
+        <div class="glass-card es-card">
+          <button class="btn-icon es-btn" onclick="App.logExtraStudy(-30)" aria-label="Less">−</button>
+          <div class="es-mid"><div class="es-num" id="es-min">0m</div><div class="es-lbl" id="es-bonus">+0 bonus XP today</div></div>
+          <button class="btn-icon es-btn" onclick="App.logExtraStudy(30)" aria-label="More">+</button>
+        </div>`;
+      const nnList = document.getElementById("non-neg-list");
+      const nnBlock = nnList ? nnList.closest(".section-block") : null;
+      if (nnBlock) today.insertBefore(card, nnBlock); else today.appendChild(card);
+    }
+    const min = s.daily.extraStudyMin || 0;
+    const h = Math.floor(min / 60), m = min % 60;
+    App.setText("es-min", h ? `${h}h ${m}m` : `${m}m`);
+    App.setText("es-bonus", `🔥 +${Math.floor(min / 30) * 10} bonus XP today`);
   }
 
   function renderConsistencyCard() {
@@ -4565,7 +4588,7 @@ window.doReset = doReset;
     App.setText("cc-best", bestOf(s.studyLog || {}));
     App.setText("cc-total", Object.keys(s.studyLog || {}).length);
     const done = !!s.daily.quests.study_25;
-    App.setText("cc-hint", done ? "✓ 25-min study logged today" : "Complete your 25-min study to keep it alive");
+    App.setText("cc-hint", done ? "✓ 1-hour study logged today" : "Complete your 1-hour study to keep it alive");
     const cc = card.querySelector(".cc");
     if (cc) cc.classList.toggle("done", done);
   }
@@ -4776,7 +4799,7 @@ window.doReset = doReset;
       block = document.createElement("div");
       block.className = "section-block";
       block.id = "study-calendar-block";
-      block.innerHTML = `<div class="section-head"><div><div class="section-title">Study Calendar</div><div class="section-sub">Tap any day to log your 25-min study</div></div></div>
+      block.innerHTML = `<div class="section-head"><div><div class="section-title">Study Calendar</div><div class="section-sub">Tap any day to log your 1-hour study</div></div></div>
         <div class="cal-wrap glass-card">
           <div class="cal-head">
             <button class="cal-nav" onclick="App.calPrev()" aria-label="Previous month">‹</button>
@@ -4886,7 +4909,7 @@ window.doReset = doReset;
     const dq = document.getElementById("tech-daily-quest");
     if (dq && rd?.tech) {
       dq.innerHTML = `<div class="section-title">${rd.tech.emoji} Today: ${rd.tech.label}</div>
-        <p class="modal-sub" style="text-align:left;margin-top:8px;">Suggested: Leetcode, system design reading, security review, or backend deep-dive. Execute 45–60 min.</p>
+        <p class="modal-sub" style="text-align:left;margin-top:8px;">Focus only on DSA or System Design. Solve a problem or read one design topic. Execute 45–60 min of deep work.</p>
         <button class="btn btn-primary btn-block mt-12" onclick="App.completeTech()">${App.getState().daily.techDone ? "✓ COMPLETED" : "MARK COMPLETE"}</button>`;
     }
   }
@@ -4984,6 +5007,30 @@ window.doReset = doReset;
         <div class="reward-emoji">${r.emoji}</div><div class="reward-name">${r.label}</div>
         <div class="reward-cost">${r.cost} XP</div><div class="reward-desc">${r.desc}</div></div>`;
     }).join("");
+    renderRedeemedHistory();
+  }
+
+  function renderRedeemedHistory() {
+    const s = App.getState();
+    const redeemed = (s.rewards && s.rewards.redeemed) || [];
+    const tab = document.getElementById("tab-rewards");
+    if (!tab) return;
+    let block = document.getElementById("redeemed-block");
+    if (!block) {
+      block = document.createElement("div");
+      block.className = "section-block";
+      block.id = "redeemed-block";
+      tab.appendChild(block);
+    }
+    if (!redeemed.length) {
+      block.innerHTML = `<div class="section-head"><div class="section-title">Claimed Rewards</div></div>
+        <div class="empty-state">No rewards claimed yet. Each claim deducts its cost from your spendable XP.</div>`;
+      return;
+    }
+    const spent = (s.spentXP || 0).toLocaleString();
+    const recent = redeemed.slice(-12).reverse();
+    block.innerHTML = `<div class="section-head"><div class="section-title">Claimed Rewards</div><div class="section-badge" style="border-color:rgba(220,38,38,0.3);color:var(--red-bright);background:rgba(220,38,38,0.08);">−${spent} XP</div></div>
+      <div class="redeemed-list">${recent.map(r => `<div class="redeemed-item"><span>${r.emoji || "🎁"} ${escapeHtml(r.label)}</span><span class="ri-date">${r.date}</span><span class="ri-cost">−${r.cost} XP</span></div>`).join("")}</div>`;
   }
 
   function drawCharts() {
@@ -5141,6 +5188,25 @@ window.doReset = doReset;
       App.render();
     },
     activateBadDay() { App.toggleBadDay(); },
+    logExtraStudy(delta) {
+      const s = App.getState();
+      const cur = s.daily.extraStudyMin || 0;
+      const next = Math.max(0, cur + delta);
+      if (next === cur) return;
+      s.daily.extraStudyMin = next;
+      const BONUS = 10; // XP per completed 30-min block
+      const blockDelta = Math.floor(next / 30) - Math.floor(cur / 30);
+      if (blockDelta > 0) {
+        addXP(blockDelta * BONUS, "bonus");          // shared closure scope
+      } else if (blockDelta < 0) {
+        const dec = -blockDelta * BONUS;
+        s.daily.xp = Math.max(0, (s.daily.xp || 0) - dec);
+        s.lifetimeXP = Math.max(0, s.lifetimeXP - dec);
+      }
+      saveState();
+      App.render();
+      if (blockDelta > 0) { showQuestToast(`+${delta} min extra study`, blockDelta * BONUS); flashScan(); }
+    },
     toggleHabit(id) { App.toggleQuest("habit_" + id); },
     removeHabitFromShell(id) {
       if (!confirm("Delete this habit? Its history will be removed.")) return;
