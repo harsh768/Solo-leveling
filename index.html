@@ -1470,37 +1470,84 @@ body::after {
   gap: 10px;
 }
 
-/* ── LEVEL UP MODAL ── */
-#levelup-modal .modal-sheet {
-  background: linear-gradient(180deg, #12101a 0%, #0a0a12 100%);
-  border-color: rgba(245, 158, 11, 0.3);
-  text-align: center;
+/* ── LEVEL-UP / RANK-UP TAKEOVER ── */
+.levelup-overlay {
+  --lvl-color: #f59e0b;
+  background: radial-gradient(ellipse at center, rgba(2,2,6,0.72) 0%, rgba(0,0,0,0.95) 72%);
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+  overflow: hidden;
+}
+.lvl-fx { position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.lvl-rays {
+  position: absolute; width: 200vmax; height: 200vmax; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, var(--lvl-color) 0deg 4deg, transparent 4deg 15deg);
+  opacity: 0; mix-blend-mode: screen;
+}
+.levelup-overlay.show .lvl-rays { animation: lvlRaysIn .7s ease-out forwards, lvlSpin 16s linear infinite; }
+@keyframes lvlRaysIn { to { opacity: .2; } }
+@keyframes lvlSpin { to { transform: rotate(360deg); } }
+.lvl-ring { position: absolute; width: 130px; height: 130px; border: 2px solid var(--lvl-color); border-radius: 50%; opacity: 0; }
+.levelup-overlay.show .lvl-ring { animation: lvlRing 1.7s ease-out forwards; }
+.lvl-ring.r2 { animation-delay: .2s !important; }
+.lvl-ring.r3 { animation-delay: .4s !important; }
+@keyframes lvlRing { 0% { opacity: .7; transform: scale(.3); } 100% { opacity: 0; transform: scale(6); } }
+.lvl-shards { position: absolute; inset: 0; }
+.lvl-shard { position: absolute; top: 50%; left: 50%; border-radius: 2px; opacity: 0; will-change: transform, opacity; }
+@keyframes lvlShard {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.3) rotate(0deg); }
+  12% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1) rotate(var(--rot)); }
 }
 
-.levelup-glow {
-  animation: levelUpGlow 2s ease-in-out infinite;
+.levelup-core {
+  position: relative; z-index: 2; text-align: center; max-width: 360px; padding: 24px;
+  animation: lvlCoreIn .5s cubic-bezier(.34, 1.56, .64, 1);
 }
+@keyframes lvlCoreIn { from { opacity: 0; transform: translateY(18px) scale(.95); } to { opacity: 1; transform: none; } }
+.lvl-kicker { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 5px; color: var(--lvl-color); margin-bottom: 10px; animation: lvlBlink 1.4s ease-in-out infinite; }
+@keyframes lvlBlink { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+.lvl-headline { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: 4px; color: #fff; text-shadow: 0 0 22px var(--lvl-color); }
+.lvl-rank-badge {
+  width: 138px; height: 138px; margin: 16px auto; border-radius: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.02); border: 2px solid var(--lvl-color);
+  animation: lvlBadgeIn .6s cubic-bezier(.34, 1.7, .5, 1), lvlBadgePulse 1.8s ease-in-out .6s infinite;
+}
+@keyframes lvlBadgeIn { 0% { transform: scale(.2) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.12) rotate(6deg); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes lvlBadgePulse { 0%, 100% { box-shadow: 0 0 40px var(--lvl-color), inset 0 0 22px var(--lvl-color); } 50% { box-shadow: 0 0 85px var(--lvl-color), inset 0 0 42px var(--lvl-color); } }
+.lvl-rank-letter { font-family: 'Rajdhani', sans-serif; font-size: 84px; font-weight: 700; line-height: 1; color: var(--lvl-color); text-shadow: 0 0 30px var(--lvl-color); }
+.lvl-transition { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 4px 0; font-family: 'Rajdhani', sans-serif; font-weight: 700; }
+.lvl-from { font-size: 24px; color: var(--muted); }
+.lvl-arrow { font-size: 18px; color: var(--lvl-color); animation: lvlArrow 1s ease-in-out infinite; }
+@keyframes lvlArrow { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+.lvl-to { font-size: 30px; color: var(--lvl-color); text-shadow: 0 0 16px var(--lvl-color); }
+.lvl-rank-label { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 1px; color: #fff; margin-top: 6px; }
+.lvl-msg { font-size: 13px; color: var(--text-dim); line-height: 1.6; margin: 10px 0 22px; }
+.lvl-accept {
+  width: 100%; padding: 14px; border: none; border-radius: 14px; cursor: pointer;
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 2px; color: #0a0a12;
+  background: linear-gradient(135deg, var(--lvl-color), #ffffff);
+  animation: lvlBtnGlow 1.6s ease-in-out infinite;
+}
+@keyframes lvlBtnGlow { 0%, 100% { box-shadow: 0 0 18px var(--lvl-color); } 50% { box-shadow: 0 0 42px var(--lvl-color); } }
+.lvl-accept:active { transform: scale(.97); }
 
-@keyframes levelUpGlow {
-  0%, 100% { box-shadow: 0 0 30px rgba(245, 158, 11, 0.1); }
-  50% { box-shadow: 0 0 60px rgba(245, 158, 11, 0.25), 0 0 100px rgba(124, 58, 237, 0.1); }
-}
+/* screen shake on rank-up */
+@keyframes screenShake { 0%, 100% { transform: translate(0,0); } 20% { transform: translate(-4px,2px); } 40% { transform: translate(4px,-3px); } 60% { transform: translate(-3px,2px); } 80% { transform: translate(3px,-1px); } }
+body.lvl-shake { animation: screenShake .5s ease-in-out; }
 
-.levelup-rank {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 72px;
-  font-weight: 700;
-  color: var(--gold-bright);
-  line-height: 1;
-  margin: 16px 0;
-  text-shadow: 0 0 40px rgba(245, 158, 11, 0.4);
-  animation: rankPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* level-NUMBER pop (every level threshold) */
+.level-pop { position: fixed; inset: 0; z-index: 480; display: none; align-items: center; justify-content: center; pointer-events: none; }
+.level-pop.show { display: flex; }
+.level-pop-inner { text-align: center; animation: levelPop 1.1s cubic-bezier(.34, 1.7, .5, 1) forwards; }
+.level-pop-label { font-family: 'Rajdhani', sans-serif; letter-spacing: 6px; font-size: 14px; font-weight: 600; color: var(--purple-bright); }
+.level-pop-num {
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 104px; line-height: 1; margin-top: 4px;
+  background: linear-gradient(135deg, #ffffff, var(--purple-bright));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 40px var(--purple-glow));
 }
-
-@keyframes rankPop {
-  0% { transform: scale(0.3); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
+@keyframes levelPop { 0% { opacity: 0; transform: scale(.3); } 22% { opacity: 1; transform: scale(1.12); } 72% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.06); } }
 
 /* ── QUEST TOAST ── */
 .quest-toast {
@@ -2361,16 +2408,31 @@ body::after {
   </div>
 </div>
 
-<!-- LEVEL UP MODAL -->
-<div class="overlay overlay-center" id="levelup-modal">
-  <div class="modal-sheet levelup-glow">
-    <div class="modal-icon">⬆</div>
-    <div class="modal-title">LEVEL UP</div>
-    <div class="levelup-rank" id="levelup-rank">S</div>
-    <div class="modal-sub" id="levelup-msg">Your power has grown. The shadows tremble.</div>
-    <div class="modal-actions">
-      <button class="btn btn-primary btn-block" onclick="App.closeLevelUp()">ACCEPT POWER</button>
-    </div>
+<!-- RANK-UP TAKEOVER -->
+<div class="overlay overlay-center levelup-overlay" id="levelup-modal" onclick="App.closeLevelUp()">
+  <div class="lvl-fx">
+    <div class="lvl-rays"></div>
+    <div class="lvl-ring r1"></div>
+    <div class="lvl-ring r2"></div>
+    <div class="lvl-ring r3"></div>
+    <div class="lvl-shards" id="lvl-shards"></div>
+  </div>
+  <div class="levelup-core" onclick="event.stopPropagation()">
+    <div class="lvl-kicker">⚡ THE SYSTEM ⚡</div>
+    <div class="lvl-headline" id="levelup-headline">RANK UP</div>
+    <div class="lvl-rank-badge"><span class="lvl-rank-letter" id="levelup-rank">S</span></div>
+    <div class="lvl-transition"><span class="lvl-from" id="levelup-from">E</span><span class="lvl-arrow">➜</span><span class="lvl-to" id="levelup-to">S</span></div>
+    <div class="lvl-rank-label" id="levelup-label">S-Rank Hunter</div>
+    <div class="lvl-msg" id="levelup-msg">Your power has grown. The shadows tremble.</div>
+    <button class="lvl-accept" onclick="App.closeLevelUp()">ARISE ⚡</button>
+  </div>
+</div>
+
+<!-- LEVEL-NUMBER POP -->
+<div class="level-pop" id="level-pop">
+  <div class="level-pop-inner">
+    <div class="level-pop-label">LEVEL</div>
+    <div class="level-pop-num" id="level-pop-num">2</div>
   </div>
 </div>
 
@@ -3026,7 +3088,12 @@ const Sound = (() => {
   };
   return {
     quest: () => tone(523, 0.12),
-    levelUp: () => { tone(523, 0.1); setTimeout(() => tone(659, 0.1), 100); setTimeout(() => tone(784, 0.2), 200); },
+    levelUp: () => {
+      // Rising arpeggio into a triumphant power chord.
+      [523, 659, 784, 1047, 1319].forEach((f, i) => setTimeout(() => tone(f, 0.13), i * 85));
+      setTimeout(() => { tone(784, 0.5, "triangle", 0.09); tone(1047, 0.5, "sine", 0.07); tone(1319, 0.5, "sine", 0.05); }, 440);
+    },
+    levelTick: () => { tone(659, 0.09); setTimeout(() => tone(988, 0.16, "triangle", 0.07), 70); },
     streak: () => { tone(440, 0.08); setTimeout(() => tone(554, 0.15), 80); },
     reward: () => { tone(392, 0.1); setTimeout(() => tone(494, 0.1), 90); setTimeout(() => tone(587, 0.15), 180); },
     error: () => tone(200, 0.2, "square", 0.05),
@@ -4646,7 +4713,16 @@ window.doReset = doReset;
     App.setText("rank-badge", rank.id);
     const rb = document.getElementById("rank-badge");
     if (rb) { rb.className = "rank-circle rank-" + rank.id.toLowerCase().replace(/[^a-z]/g, ""); rb.style.color = rank.color; rb.style.borderColor = rank.color; }
-    App.setText("level-num", calcLevel(s.lifetimeXP));
+    const lvl = calcLevel(s.lifetimeXP);
+    App.setText("level-num", lvl);
+    // Celebrate when the level number ticks up — but not on first load, and not while a
+    // bigger rank-up takeover is already on screen.
+    if (s._lastShownLevel == null) { s._lastShownLevel = lvl; }
+    else if (lvl > s._lastShownLevel) {
+      s._lastShownLevel = lvl;
+      saveState();
+      if (!document.getElementById("levelup-modal")?.classList.contains("show")) celebrateLevel(lvl);
+    }
     App.setText("daily-xp-count", `${dailyXp} / ${maxDaily} XP`);
     App.setStyle("daily-xp-fill", "width", Math.min(100, (dailyXp / maxDaily) * 100) + "%");
     App.setText("lifetime-xp-count", `${s.lifetimeXP.toLocaleString()} XP · ${rank.label}`);
@@ -5378,6 +5454,50 @@ window.doReset = doReset;
     el.classList.add("flash");
   }
 
+  // Flavour line shown on each rank-up.
+  const RANK_FLAVOR = {
+    D: "The first gate opens. Your weakness sheds away.",
+    C: "Your name begins to echo through the dungeons.",
+    B: "Other hunters turn to watch you pass.",
+    A: "Elite. Few ever climb this high.",
+    S: "S-Rank. The summit of mortal hunters.",
+    NRH: "A national-level asset. Nations take notice.",
+    MC: "The Monarchs sense a rival rising.",
+    SM: "Arise. The Shadow Monarch has awakened.",
+  };
+
+  // Burst of rank-coloured shards from screen centre.
+  function spawnShards(color) {
+    const root = document.getElementById("lvl-shards");
+    if (!root) return;
+    const N = 24;
+    let html = "";
+    for (let i = 0; i < N; i++) {
+      const ang = (Math.PI * 2 * i) / N + (Math.random() - 0.5) * 0.5;
+      const dist = 120 + Math.random() * 230;
+      const dx = Math.round(Math.cos(ang) * dist);
+      const dy = Math.round(Math.sin(ang) * dist);
+      const rot = Math.round((Math.random() * 2 - 1) * 600);
+      const delay = (Math.random() * 0.18).toFixed(2);
+      const dur = (0.9 + Math.random() * 0.7).toFixed(2);
+      const size = 5 + Math.round(Math.random() * 7);
+      const c = i % 3 === 0 ? "#ffffff" : color;
+      html += `<i class="lvl-shard" style="--dx:${dx}px;--dy:${dy}px;--rot:${rot}deg;width:${size}px;height:${size}px;background:${c};box-shadow:0 0 8px ${c};animation:lvlShard ${dur}s ease-out ${delay}s forwards;"></i>`;
+    }
+    root.innerHTML = html;
+  }
+
+  // Lighter celebration each time the LEVEL number ticks up (every 750 XP).
+  function celebrateLevel(n) {
+    const pop = document.getElementById("level-pop");
+    if (!pop) return;
+    App.setText("level-pop-num", n);
+    pop.classList.remove("show"); void pop.offsetWidth; pop.classList.add("show");
+    try { Sound.levelTick(); } catch (_) {}
+    flashScan();
+    setTimeout(() => pop.classList.remove("show"), 1150);
+  }
+
   // Auto-start a new day at midnight (00:00 local) — no manual "New Day" needed.
   function startDayWatcher() {
     const currentDateStr = () => new Date().toISOString().slice(0, 10);
@@ -5477,10 +5597,22 @@ window.doReset = doReset;
     startDayWatcher();
     if (!s.onboarded) document.getElementById("onboarding-modal")?.classList.add("show");
     App.setLevelUpCallback((oldRank, newRank) => {
-      App.setText("levelup-rank", newRank.id);
-      App.setText("levelup-msg", newRank.label + " — Your power has grown.");
-      document.getElementById("levelup-modal")?.classList.add("show");
+      const overlay = document.getElementById("levelup-modal");
+      const color = newRank.color || "#f59e0b";
+      if (overlay) {
+        overlay.style.setProperty("--lvl-color", color);
+        App.setText("levelup-headline", newRank.id === "SM" ? "MONARCH RISEN" : "RANK UP");
+        App.setText("levelup-rank", newRank.id);
+        App.setText("levelup-from", oldRank.id);
+        App.setText("levelup-to", newRank.id);
+        App.setText("levelup-label", newRank.label);
+        App.setText("levelup-msg", RANK_FLAVOR[newRank.id] || "Your power has grown. The shadows tremble.");
+        spawnShards(color);
+        overlay.classList.add("show");
+      }
+      Sound.levelUp();
       flashScan();
+      document.body.classList.remove("lvl-shake"); void document.body.offsetWidth; document.body.classList.add("lvl-shake");
     });
     App.render();
   };
