@@ -1945,6 +1945,38 @@ body.lvl-shake { animation: screenShake .5s ease-in-out; }
 .pw-subj { color:var(--muted); font-size:10px; margin-left:4px; }
 @media (min-width:768px){ .plan-grid { grid-template-columns:repeat(6,1fr); } }
 
+/* focus timer */
+.focus-card { text-align:center; }
+.focus-time { font-family:'Rajdhani',sans-serif; font-size:56px; font-weight:700; line-height:1; letter-spacing:2px; color:var(--cyan-bright); text-shadow:0 0 24px rgba(6,182,212,0.25); margin:4px 0 14px; font-variant-numeric:tabular-nums; }
+.focus-controls { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.focus-controls .btn { flex:1; min-width:84px; }
+.focus-main.running { background:linear-gradient(135deg,var(--gold),var(--gold-bright)); }
+.focus-hint { font-size:11px; color:var(--muted); margin-top:12px; font-family:'Rajdhani',sans-serif; letter-spacing:0.3px; }
+
+/* achievements */
+.ach-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.ach-badge { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:14px 8px; text-align:center; transition:transform .15s; }
+.ach-badge.on { border-color:rgba(245,158,11,0.35); background:linear-gradient(160deg,var(--bg2),rgba(245,158,11,0.07)); box-shadow:0 0 18px rgba(245,158,11,0.08); }
+.ach-badge.off { opacity:0.55; }
+.ach-icon { font-size:28px; line-height:1; margin-bottom:6px; }
+.ach-badge.off .ach-icon { filter:grayscale(1) opacity(0.6); }
+.ach-title { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:12px; letter-spacing:0.3px; }
+.ach-badge.on .ach-title { color:var(--gold-bright); }
+.ach-desc { font-size:9px; color:var(--muted); margin-top:3px; line-height:1.3; }
+
+/* weekly recap */
+.wr-card { padding:16px; }
+.wr-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+.wr-stat { text-align:center; }
+.wr-num { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--purple-bright); line-height:1; }
+.wr-lbl { font-size:9px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:0.4px; }
+.wr-chart { display:flex; align-items:flex-end; justify-content:space-between; gap:6px; height:80px; padding-top:8px; border-top:1px solid var(--border); }
+.wr-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:5px; }
+.wr-bar { width:70%; max-width:24px; min-height:3px; border-radius:4px 4px 0 0; background:linear-gradient(180deg,var(--purple-bright),var(--purple)); }
+.wr-bar.today { background:linear-gradient(180deg,var(--gold-bright),var(--gold)); box-shadow:0 0 10px var(--gold-glow); }
+.wr-col-lbl { font-size:9px; color:var(--muted); font-family:'Rajdhani',sans-serif; }
+@media (min-width:768px){ .ach-grid { grid-template-columns:repeat(6,1fr); } }
+
 /* snappier taps on iOS — removes gesture delay on interactive elements */
 .btn, .btn-icon, .non-neg-item, .habit-row, .habit-check, .habit-icon-btn, .quest-card, .tech-card,
 .reward-card, .nav-tab, .cal-cell, .cal-nav, .settings-btn, .tree-head, .tree-topic, .confidence-actions button { touch-action: manipulation; }
@@ -3126,6 +3158,8 @@ function defaultState() {
     habitLog: {},
     rewards: { redeemed: [] },
     rewardsShop: [],
+    focusTimer: { running: false, startEpoch: 0, baseSec: 0 },
+    achievements: {},
     vape: { quitDate: t, totalPuffs: 0, dailyPuffs: 0, cravings: 0, moneyPerPack: 350, puffsPerPack: 600, log: [] },
     social: { insta: 0, ytShorts: 0, reddit: 0, twitter: 0, screenTime: 0, deepWork: 0 },
     nutrition: { calories: 0, protein: 0, water: 0, junk: 0, targetCal: 1800, targetProtein: 100, targetWater: 3 },
@@ -3149,6 +3183,7 @@ function freshDaily() {
     confidenceDone: false,
     badDay: false,
     extraStudyMin: 0,
+    focusMin: 0,
     xp: 0,
   };
 }
@@ -4759,6 +4794,7 @@ window.doReset = doReset;
     renderConsistencyCard();
     renderDailyQuests(rd);
     renderPlanToday();
+    renderFocusTimer();
     renderExtraStudyCard();
     renderNonNeg();
     renderCustomHabits();
@@ -5228,6 +5264,194 @@ window.doReset = doReset;
       <div class="tree-topics plan-week-list">${weekList}</div>`;
   }
 
+  // ── FOCUS TIMER (auto-logs study) ──────────────────────────────────────────
+  function focusElapsedSec() {
+    const t = App.getState().focusTimer || {};
+    return Math.max(0, (t.baseSec || 0) + (t.running ? (Date.now() - (t.startEpoch || Date.now())) / 1000 : 0));
+  }
+  function applyFocusSession(min) {
+    if (min <= 0) return;
+    const s = App.getState();
+    const prev = s.daily.focusMin || 0;
+    const next = prev + min;
+    s.daily.focusMin = next;
+    s.studyMinutes = (s.studyMinutes || 0) + min;
+    // First 60 focused minutes complete the 1-hour non-negotiable (keeps the core streak).
+    if (next >= 60 && !s.daily.quests.study_25) {
+      s.daily.quests.study_25 = true;
+      const q = App.NON_NEGOTIABLE_QUESTS.find(x => x.id === "study_25");
+      addXP(q ? q.xp : 30);
+      if (q && q.streakKey) updateStreak(q.streakKey, true);
+    }
+    // Every 30-min block beyond the first hour = +10 bonus XP (shared with the extra-study card).
+    const blocksBefore = Math.floor(Math.max(0, prev - 60) / 30);
+    const blocksAfter = Math.floor(Math.max(0, next - 60) / 30);
+    const newBlocks = blocksAfter - blocksBefore;
+    if (newBlocks > 0) {
+      addXP(newBlocks * 10, "bonus");
+      s.daily.extraStudyMin = (s.daily.extraStudyMin || 0) + newBlocks * 30;
+    }
+    saveState();
+  }
+  function updateFocusDisplay() {
+    const el = document.getElementById("focus-time");
+    if (!el) return;
+    const sec = Math.floor(focusElapsedSec());
+    el.textContent = `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
+  }
+  function renderFocusTimer() {
+    const s = App.getState();
+    let card = document.getElementById("focus-timer-block");
+    if (!card) {
+      const today = document.getElementById("tab-today");
+      if (!today) return;
+      card = document.createElement("div");
+      card.className = "section-block";
+      card.id = "focus-timer-block";
+      card.innerHTML = `<div class="section-head"><div><div class="section-title">Focus Timer</div><div class="section-sub">Auto-logs to your 1-hour core + bonus</div></div><div class="section-badge" id="focus-total-badge">0m today</div></div>
+        <div class="glass-card focus-card">
+          <div class="focus-time" id="focus-time">00:00</div>
+          <div class="focus-controls">
+            <button class="btn btn-primary focus-main" id="focus-toggle" onclick="App.focusToggle()">START</button>
+            <button class="btn btn-secondary" onclick="App.focusLog()">LOG ✓</button>
+            <button class="btn btn-ghost" onclick="App.focusReset()">RESET</button>
+          </div>
+          <div class="focus-hint" id="focus-hint">60 min completes today's core study</div>
+        </div>`;
+      const anchor = document.getElementById("extra-study-block") ||
+        (function () { const nn = document.getElementById("non-neg-list"); return nn ? nn.closest(".section-block") : null; })();
+      if (anchor) today.insertBefore(card, anchor); else today.appendChild(card);
+    }
+    const running = !!(s.focusTimer && s.focusTimer.running);
+    App.setText("focus-toggle", running ? "PAUSE" : "START");
+    const tg = document.getElementById("focus-toggle");
+    if (tg) tg.classList.toggle("running", running);
+    App.setText("focus-total-badge", `${s.daily.focusMin || 0}m today`);
+    App.setText("focus-hint", s.daily.quests.study_25
+      ? "✓ Core done — extra time = bonus XP"
+      : `${Math.max(0, 60 - (s.daily.focusMin || 0))} more min to complete core`);
+    updateFocusDisplay();
+  }
+
+  // ── ACHIEVEMENTS ────────────────────────────────────────────────────────────
+  const ACHIEVEMENTS = [
+    { id: "first_step", icon: "👣", title: "First Step", desc: "Finish your first topic", check: d => d.topicsDone >= 1 },
+    { id: "streak_7", icon: "🔥", title: "Week Warrior", desc: "7-day study streak", check: d => d.streak >= 7 },
+    { id: "streak_30", icon: "🌟", title: "Unbreakable", desc: "30-day study streak", check: d => d.streak >= 30 },
+    { id: "streak_100", icon: "💯", title: "Centurion", desc: "100-day study streak", check: d => d.streak >= 100 },
+    { id: "topics_50", icon: "📚", title: "Scholar", desc: "50 topics completed", check: d => d.topicsDone >= 50 },
+    { id: "topics_100", icon: "🎓", title: "Polymath", desc: "100 topics completed", check: d => d.topicsDone >= 100 },
+    { id: "topics_250", icon: "🏛️", title: "Syllabus Slayer", desc: "250 topics completed", check: d => d.topicsDone >= 250 },
+    { id: "math_10", icon: "∑", title: "Optional Edge", desc: "10 Maths topics done", check: d => d.mathDone >= 10 },
+    { id: "xp_1k", icon: "⚡", title: "Charged Up", desc: "1,000 lifetime XP", check: d => d.xp >= 1000 },
+    { id: "xp_10k", icon: "💠", title: "Power Surge", desc: "10,000 lifetime XP", check: d => d.xp >= 10000 },
+    { id: "xp_25k", icon: "🌌", title: "Overflowing", desc: "25,000 lifetime XP", check: d => d.xp >= 25000 },
+    { id: "rank_c", icon: "🥉", title: "Rising Hunter", desc: "Reach C-Rank", check: d => d.rankIdx >= 2 },
+    { id: "rank_b", icon: "🥈", title: "Notable Hunter", desc: "Reach B-Rank", check: d => d.rankIdx >= 3 },
+    { id: "rank_a", icon: "🥇", title: "Elite Hunter", desc: "Reach A-Rank", check: d => d.rankIdx >= 4 },
+    { id: "rank_s", icon: "👑", title: "S-Rank Hunter", desc: "Reach S-Rank", check: d => d.rankIdx >= 5 },
+    { id: "focus_3h", icon: "🎯", title: "Deep Diver", desc: "3+ focused hours in a day", check: d => d.focusMin >= 180 },
+    { id: "first_reward", icon: "🎁", title: "Treat Yourself", desc: "Claim your first reward", check: d => d.rewardsClaimed >= 1 },
+    { id: "habit_builder", icon: "🧩", title: "Habit Builder", desc: "Create 3 custom habits", check: d => d.habitCount >= 3 },
+  ];
+  function achievementStats() {
+    const s = App.getState();
+    const tp = s.topicProgress || {};
+    return {
+      topicsDone: Object.values(tp).filter(p => p.completed).length,
+      mathDone: Object.entries(tp).filter(([id, p]) => p.completed && id.startsWith("math_")).length,
+      streak: streakOf(s.studyLog || {}, s.today),
+      xp: s.lifetimeXP || 0,
+      rankIdx: App.RANKS.findIndex(r => r.id === App.getRank().id),
+      focusMin: s.daily.focusMin || 0,
+      rewardsClaimed: (s.rewards && s.rewards.redeemed) ? s.rewards.redeemed.length : 0,
+      habitCount: (s.habits || []).length,
+    };
+  }
+  function checkAchievements() {
+    const s = App.getState();
+    s.achievements = s.achievements || {};
+    const stats = achievementStats();
+    const firstInit = !s._achInit;
+    const newly = [];
+    ACHIEVEMENTS.forEach(a => {
+      if (a.check(stats) && !s.achievements[a.id]) {
+        s.achievements[a.id] = s.today;
+        if (!firstInit) newly.push(a);
+      }
+    });
+    s._achInit = true;
+    newly.forEach((a, i) => setTimeout(() => celebrateAchievement(a), 600 + i * 1300));
+  }
+  function celebrateAchievement(a) {
+    const t = document.getElementById("quest-toast");
+    if (t) {
+      const ti = t.querySelector(".quest-toast-title"); if (ti) ti.textContent = "ACHIEVEMENT UNLOCKED";
+      App.setText("quest-toast-msg", `${a.icon} ${a.title}`);
+      App.setText("quest-toast-xp", a.desc);
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 2700);
+    }
+    try { Sound.reward(); } catch (_) {}
+    flashScan();
+  }
+  function renderAchievements() {
+    const s = App.getState();
+    const tab = document.getElementById("tab-stats");
+    if (!tab) return;
+    let block = document.getElementById("achievements-block");
+    if (!block) { block = document.createElement("div"); block.className = "section-block"; block.id = "achievements-block"; tab.appendChild(block); }
+    const unlocked = ACHIEVEMENTS.filter(a => s.achievements && s.achievements[a.id]).length;
+    block.innerHTML = `<div class="section-head"><div class="section-title">Achievements</div><div class="section-badge">${unlocked}/${ACHIEVEMENTS.length}</div></div>
+      <div class="ach-grid">${ACHIEVEMENTS.map(a => {
+        const on = !!(s.achievements && s.achievements[a.id]);
+        return `<div class="ach-badge ${on ? "on" : "off"}">
+          <div class="ach-icon">${on ? a.icon : "🔒"}</div>
+          <div class="ach-title">${a.title}</div>
+          <div class="ach-desc">${a.desc}</div></div>`;
+      }).join("")}</div>`;
+  }
+
+  // ── WEEKLY RECAP ────────────────────────────────────────────────────────────
+  function renderWeeklyRecap() {
+    const s = App.getState();
+    const tab = document.getElementById("tab-stats");
+    if (!tab) return;
+    let block = document.getElementById("weekly-recap-block");
+    if (!block) { block = document.createElement("div"); block.className = "section-block"; block.id = "weekly-recap-block"; tab.insertBefore(block, tab.firstChild); }
+    const today = s.today;
+    const xpByDate = {};
+    (s.xpHistory || []).forEach(h => { xpByDate[h.date] = (xpByDate[h.date] || 0) + h.xp; });
+    xpByDate[today] = (xpByDate[today] || 0) + (s.daily.xp || 0);
+    const dow = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+    let weekXP = 0, studyDays = 0, bestXP = 0;
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = addDays(today, -i);
+      const xp = xpByDate[d] || 0;
+      weekXP += xp; if (xp > bestXP) bestXP = xp;
+      if ((s.studyLog || {})[d]) studyDays++;
+      days.push({ d, xp });
+    }
+    const weekStart = addDays(today, -6);
+    const topicsWeek = Object.values(s.topicProgress || {}).filter(p => p.completedDate && p.completedDate >= weekStart && p.completedDate <= today).length;
+    const maxXp = Math.max(1, ...days.map(x => x.xp));
+    const bars = days.map(x => {
+      const isToday = x.d === today;
+      return `<div class="wr-col"><div class="wr-bar ${isToday ? "today" : ""}" style="height:${Math.max(3, Math.round(x.xp / maxXp * 100))}%"></div><div class="wr-col-lbl">${dow[new Date(x.d + "T12:00:00").getDay()]}</div></div>`;
+    }).join("");
+    block.innerHTML = `<div class="section-head"><div><div class="section-title">Weekly Recap</div><div class="section-sub">Last 7 days · screenshot &amp; share</div></div><div class="section-badge">🔥 ${streakOf(s.studyLog || {}, today)}d</div></div>
+      <div class="glass-card wr-card">
+        <div class="wr-stats">
+          <div class="wr-stat"><div class="wr-num">${weekXP.toLocaleString()}</div><div class="wr-lbl">XP this week</div></div>
+          <div class="wr-stat"><div class="wr-num">${studyDays}/7</div><div class="wr-lbl">Study days</div></div>
+          <div class="wr-stat"><div class="wr-num">${topicsWeek}</div><div class="wr-lbl">Topics done</div></div>
+          <div class="wr-stat"><div class="wr-num">${bestXP.toLocaleString()}</div><div class="wr-lbl">Best day XP</div></div>
+        </div>
+        <div class="wr-chart">${bars}</div>
+      </div>`;
+  }
+
   function renderTechTab(rd) {
     const grid = document.getElementById("tech-grid");
     if (grid) {
@@ -5309,7 +5533,9 @@ window.doReset = doReset;
 
   function renderStatsTab() {
     const s = App.getState();
+    renderWeeklyRecap();
     renderDashboard();
+    renderAchievements();
     App.setText("stats-streak-num", streakOf(s.studyLog || {}, s.today));
     App.setText("stat-days", dayNum());
     App.setText("stat-quests", Object.keys(s.daily.quests).filter(k => s.daily.quests[k]).length);
@@ -5440,6 +5666,7 @@ window.doReset = doReset;
   function showQuestToast(msg, xp) {
     const t = document.getElementById("quest-toast");
     if (!t) return;
+    const ti = t.querySelector(".quest-toast-title"); if (ti) ti.textContent = "QUEST COMPLETE";
     App.setText("quest-toast-msg", msg);
     App.setText("quest-toast-xp", xp ? "+" + xp + " XP" : "");
     t.classList.add("show");
@@ -5543,6 +5770,7 @@ window.doReset = doReset;
   App.render = function () {
     ensureToday();   // rolls the day over (archives + resets) when the date changes
     syncLogs();      // keep study/habit logs in lockstep with today's quest state
+    checkAchievements(); // unlock + celebrate any newly-earned badges
     saveState();     // persist everything (habits, streaks, logs, calendar) every update
     renderShellUI();
   };
@@ -5595,6 +5823,8 @@ window.doReset = doReset;
     document.getElementById("tab-" + startTab)?.classList.add("active");
     document.querySelector(`[data-tab="${startTab}"]`)?.classList.add("active");
     startDayWatcher();
+    // Live-tick the focus timer display once a second while it's running.
+    setInterval(() => { if (App.getState()?.focusTimer?.running) updateFocusDisplay(); }, 1000);
     if (!s.onboarded) document.getElementById("onboarding-modal")?.classList.add("show");
     App.setLevelUpCallback((oldRank, newRank) => {
       const overlay = document.getElementById("levelup-modal");
@@ -5672,6 +5902,28 @@ window.doReset = doReset;
       deleteReward(id);
       if (fromModal) App.closeRewardEdit();
       showToast(`🗑 ${r ? r.label : "Reward"} deleted`);
+      App.render();
+    },
+    focusToggle() {
+      const t = App.getState().focusTimer;
+      if (t.running) { t.baseSec = (t.baseSec || 0) + (Date.now() - t.startEpoch) / 1000; t.running = false; }
+      else { t.startEpoch = Date.now(); t.running = true; }
+      saveState();
+      renderFocusTimer();
+    },
+    focusReset() {
+      const t = App.getState().focusTimer;
+      t.running = false; t.baseSec = 0; t.startEpoch = 0;
+      saveState();
+      renderFocusTimer();
+    },
+    focusLog() {
+      const min = Math.floor(focusElapsedSec() / 60);
+      const t = App.getState().focusTimer;
+      t.running = false; t.baseSec = 0; t.startEpoch = 0;
+      if (min >= 1) { applyFocusSession(min); showQuestToast(`Logged ${min} min of focus`, null); flashScan(); }
+      else { showToast("Study at least 1 minute to log it"); }
+      saveState();
       App.render();
     },
     logExtraStudy(delta) {
