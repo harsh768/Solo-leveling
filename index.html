@@ -1882,6 +1882,22 @@ body::after {
 .redeemed-item .ri-cost { font-family:'Rajdhani',sans-serif; font-weight:700; color:var(--red-bright); }
 .redeemed-item .ri-date { font-size:10px; color:var(--muted); }
 
+/* exam plan (daily/weekly targets) */
+.plan-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+.plan-tile { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:12px 6px; text-align:center; }
+.pt-num { font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:var(--purple-bright); line-height:1; }
+.pt-lbl { font-size:9px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }
+.plan-note { font-size:12px; border-radius:12px; padding:10px 12px; margin-bottom:10px; line-height:1.4; }
+.plan-note.ok { color:var(--green-bright); background:rgba(16,185,129,0.07); border:1px solid rgba(16,185,129,0.25); }
+.plan-note.warn { color:var(--gold-bright); background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.25); }
+.plan-sched { padding:14px; }
+.plan-sched-title { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; letter-spacing:0.5px; margin-bottom:8px; }
+.plan-sched-row { font-size:11px; color:var(--text-dim); line-height:1.6; }
+.plan-sched-row b { color:var(--text); font-family:'Rajdhani',sans-serif; }
+.plan-week-list { padding-top:4px; }
+.pw-subj { color:var(--muted); font-size:10px; margin-left:4px; }
+@media (min-width:768px){ .plan-grid { grid-template-columns:repeat(6,1fr); } }
+
 /* snappier taps on iOS — removes gesture delay on interactive elements */
 .btn, .btn-icon, .non-neg-item, .habit-row, .habit-check, .habit-icon-btn, .quest-card, .tech-card,
 .reward-card, .nav-tab, .cal-cell, .cal-nav, .settings-btn, .tree-head, .tree-topic, .confidence-actions button { touch-action: manipulation; }
@@ -2414,6 +2430,8 @@ body::after {
 
 const STORAGE_KEY = "solo_system_v1";
 const ROADMAP_DAYS = 180;
+// Hard exam deadline — full UPSC syllabus + Maths optional to be covered by this date.
+const EXAM_DATE = "2026-12-31";
 
 // ============================================================================
 // USER PROFILE DEFAULTS
@@ -3378,11 +3396,87 @@ function flattenSyllabus() {
   for (const [paper, pdata] of Object.entries(MATH_OPTIONAL.papers)) {
     for (const [chapter, ch] of Object.entries(pdata.chapters)) {
       ch.subtopics.forEach((sub, i) => {
-        units.push({ id: `math_${paper}_${chapter}_${i}`.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, ""), subject: "Math Optional", paper, chapter, subtopic: sub, type: "math", hours: 0.75 });
+        units.push({ id: `math_${paper}_${chapter}_${i}`.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, ""), subject: `Math Optional · ${paper}`, paper, chapter, subtopic: sub, type: "math", hours: 0.75 });
       });
     }
   }
   return units;
+}
+
+// ============================================================================
+// EXAM PLAN — adaptive daily/weekly targets to finish the whole syllabus by EXAM_DATE
+// ============================================================================
+// Subjects that are "process" work (practice/revision) — pushed slightly later so the
+// learning subjects + Maths optional get covered first.
+const PLAN_LATER_SUBJECTS = ["Prelims PYQs", "Mains PYQs", "Mock Tests", "Revision"];
+
+// Round-robin interleave units across subjects so each day's targets are a varied mix
+// (some GS + some Maths), instead of grinding one subject for weeks.
+function planUnitsOrdered() {
+  const units = flattenSyllabus();
+  const bySubj = {};
+  units.forEach(u => { (bySubj[u.subject] = bySubj[u.subject] || []).push(u); });
+  const subjects = Object.keys(bySubj).sort((a, b) => {
+    const la = PLAN_LATER_SUBJECTS.some(s => a.startsWith(s)) ? 1 : 0;
+    const lb = PLAN_LATER_SUBJECTS.some(s => b.startsWith(s)) ? 1 : 0;
+    return la - lb;
+  });
+  const ordered = [];
+  for (let i = 0, more = true; more; i++) {
+    more = false;
+    for (const s of subjects) { if (bySubj[s][i]) { ordered.push(bySubj[s][i]); more = true; } }
+  }
+  return ordered;
+}
+
+// Weekday vs weekend capacity weight — the user works 11am–8pm, so weekends carry ~2.2x.
+function planDayWeight(date) { return isWeekend(date) ? 2.2 : 1; }
+
+function examPlan() {
+  const today = state.today;
+  const daysLeft = Math.max(1, dayDiff(today, EXAM_DATE) + 1);
+  const ordered = planUnitsOrdered();
+  const total = ordered.length;
+  const isDone = (u) => !!state.topicProgress[u.id]?.completed;
+  const remaining = ordered.filter(u => !isDone(u));
+  const done = total - remaining.length;
+
+  let totalWeight = 0;
+  for (let i = 0; i < daysLeft; i++) totalWeight += planDayWeight(addDays(today, i));
+  const perWeight = remaining.length / (totalWeight || 1);
+
+  const todayQuota = remaining.length ? Math.max(1, Math.round(perWeight * planDayWeight(today))) : 0;
+  let weekWeight = 0;
+  for (let i = 0; i < 7 && i < daysLeft; i++) weekWeight += planDayWeight(addDays(today, i));
+  const weekQuota = Math.min(remaining.length, Math.round(perWeight * weekWeight));
+
+  // Build a stable daily checklist: what you've finished today + enough upcoming
+  // topics to reach the quota — so completed items stay visible and "done" is real.
+  const completedToday = ordered.filter(u => state.topicProgress[u.id]?.completedDate === today);
+  const todayNeed = Math.max(0, todayQuota - completedToday.length);
+  const todayUnits = [...completedToday, ...remaining.slice(0, todayNeed)];
+  const weekStart = addDays(today, -6);
+  const completedThisWeekCount = ordered.filter(u => {
+    const d = state.topicProgress[u.id]?.completedDate;
+    return d && d >= weekStart && d <= today;
+  }).length;
+
+  // Pace check anchored to when this Dec-31 plan started (not the old journey start),
+  // so a returning hunter isn't wrongly flagged "behind" on day one.
+  if (!state.planStart) { state.planStart = today; saveState(); }
+  const totalDaysSpan = Math.max(1, dayDiff(state.planStart, EXAM_DATE) + 1);
+  const expectedDone = total * Math.min(1, Math.max(0, (totalDaysSpan - daysLeft) / totalDaysSpan));
+  const onTrack = done >= expectedDone - todayQuota;
+
+  return {
+    today, end: EXAM_DATE, daysLeft, weeksLeft: Math.ceil(daysLeft / 7),
+    total, done, remainingCount: remaining.length,
+    pct: total ? Math.round(done / total * 100) : 0,
+    todayQuota, weekQuota, onTrack,
+    avgPerDay: Math.round(perWeight * 10) / 10,
+    todayUnits, todayDone: completedToday.length,
+    weekUnits: remaining.slice(0, weekQuota), weekDone: completedThisWeekCount,
+  };
 }
 
 function buildRoadmap(startDate) {
@@ -3602,15 +3696,20 @@ function toggleBadDay() {
 
 function completeTopic(topicId) {
   ensureToday();
-  const was = !!state.daily.topics[topicId];
-  state.daily.topics[topicId] = !was;
-  if (!was) {
+  // Toggle on the PERSISTENT completion flag (that's what the syllabus tree reads),
+  // so a second tap genuinely un-ticks the topic and refunds the XP.
+  const prog = state.topicProgress[topicId] || {};
+  const wasCompleted = !!prog.completed;
+  if (!wasCompleted) {
+    state.daily.topics[topicId] = true;
+    state.topicProgress[topicId] = { ...prog, completed: true, completedDate: state.today, reviews: prog.reviews || [] };
     addXP(10);
-    state.topicProgress[topicId] = state.topicProgress[topicId] || {};
-    state.topicProgress[topicId].completed = true;
-    state.topicProgress[topicId].completedDate = state.today;
-    state.topicProgress[topicId].reviews = state.topicProgress[topicId].reviews || [];
     Sound.quest();
+  } else {
+    state.daily.topics[topicId] = false;
+    state.topicProgress[topicId] = { ...prog, completed: false };
+    state.daily.xp = Math.max(0, (state.daily.xp || 0) - 10);
+    state.lifetimeXP = Math.max(0, state.lifetimeXP - 10);
   }
   saveState();
   render();
@@ -4371,6 +4470,9 @@ const App = {
   logSocial,
   logStudyBlock,
   buyReward,
+  addReward,
+  editReward,
+  deleteReward,
   addHabit,
   editHabit,
   removeHabit,
@@ -4440,6 +4542,8 @@ const App = {
   getWeeklyStats,
   getMonthlyStats,
   getTopicStats,
+  examPlan,
+  EXAM_DATE,
   STORAGE_KEY,
   RANKS,
   UPSC_SYLLABUS,
@@ -4578,6 +4682,7 @@ window.doReset = doReset;
     App.setText("month-xp", ms.totalXP.toLocaleString());
     renderConsistencyCard();
     renderDailyQuests(rd);
+    renderPlanToday();
     renderExtraStudyCard();
     renderNonNeg();
     renderCustomHabits();
@@ -4795,6 +4900,7 @@ window.doReset = doReset;
   }
 
   function renderRoadmapTab(rd) {
+    renderPlanRoadmap();
     const phase = App.getCurrentPhase();
     const tl = document.getElementById("roadmap-timeline");
     if (tl) {
@@ -4908,9 +5014,25 @@ window.doReset = doReset;
           <div class="sb-head"><span>${data.emoji} ${name}</span><span>${pct}%</span></div>
           <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
         </div>`;
-      }).join("") + `<div class="subject-bar-item"><div class="sb-head"><span>∑ Math Optional</span><span>—</span></div>
-        <div class="progress-bar"><div class="progress-fill lifetime" style="width:0%"></div></div></div>
-        <div class="overall-pct">Overall syllabus: ${stats.pct}% complete</div>`;
+      }).join("");
+      // ── Maths optional (Paper I & II) ──
+      let mathHtml = "";
+      Object.entries(App.MATH_OPTIONAL.papers).forEach(([paper, pdata]) => {
+        let total = 0, done = 0;
+        Object.entries(pdata.chapters).forEach(([ch, c]) => {
+          c.subtopics.forEach((_, i) => {
+            total++;
+            const id = `math_${paper}_${ch}_${i}`.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+            if (s.topicProgress[id]?.completed) done++;
+          });
+        });
+        const pct = total ? Math.round(done / total * 100) : 0;
+        mathHtml += `<div class="subject-bar-item">
+          <div class="sb-head"><span>∑ Maths Optional · ${paper}</span><span>${pct}%</span></div>
+          <div class="progress-bar"><div class="progress-fill lifetime" style="width:${pct}%"></div></div>
+        </div>`;
+      });
+      subjRoot.innerHTML += mathHtml + `<div class="overall-pct">Overall syllabus: ${stats.pct}% complete</div>`;
     }
   }
 
@@ -4936,7 +5058,98 @@ window.doReset = doReset;
       }
       html += `</div>`;
     });
+    // ── Maths Optional syllabus (your optional) ──
+    Object.entries(App.MATH_OPTIONAL.papers).forEach(([paper, pdata]) => {
+      const key = "math_" + paper;
+      const open = upscExpanded[key];
+      html += `<div class="tree-subject"><div class="tree-head" onclick="App.toggleUpscSubject('${key}')">∑ Maths Optional · ${paper} <span>${open ? "▼" : "▶"}</span></div>`;
+      if (open) {
+        Object.entries(pdata.chapters).forEach(([chapter, ch]) => {
+          html += `<div class="tree-chapter">${chapter}<div class="tree-topics">`;
+          ch.subtopics.forEach((sub, i) => {
+            const id = `math_${paper}_${chapter}_${i}`.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+            const done = s.topicProgress[id]?.completed;
+            html += `<label class="tree-topic ${done ? "done" : ""}"><input type="checkbox" ${done ? "checked" : ""} onchange="App.completeTopic('${id}')"> ${sub}</label>`;
+          });
+          html += `</div></div>`;
+        });
+      }
+      html += `</div>`;
+    });
     tree.innerHTML = html;
+  }
+
+  // Daily study targets on the Today tab — adaptive slice of the syllabus to stay on pace.
+  function renderPlanToday() {
+    const s = App.getState();
+    const plan = App.examPlan();
+    let block = document.getElementById("plan-today-block");
+    if (!block) {
+      const today = document.getElementById("tab-today");
+      if (!today) return;
+      block = document.createElement("div");
+      block.className = "section-block";
+      block.id = "plan-today-block";
+      const nnList = document.getElementById("non-neg-list");
+      const nnBlock = nnList ? nnList.closest(".section-block") : null;
+      if (nnBlock) today.insertBefore(block, nnBlock); else today.appendChild(block);
+    }
+    const doneToday = plan.todayDone;
+    const list = plan.todayUnits.map(u => {
+      const done = !!s.topicProgress[u.id]?.completed;
+      return `<div class="quest-card glass-card ${done ? "done" : ""}" onclick="App.completeTopic('${u.id}')">
+        <div class="quest-icon">${u.type === "math" ? "∑" : "📖"}</div>
+        <div class="quest-body"><div class="quest-title">${escapeHtml(u.subtopic)}</div>
+          <div class="quest-sub">${escapeHtml(u.subject)}${u.chapter ? " · " + escapeHtml(u.chapter) : ""}</div></div>
+        <div class="quest-xp">${done ? "✓" : "+10"}</div></div>`;
+    }).join("") || '<div class="empty-state">🎉 Whole syllabus covered — shift to revision & mocks.</div>';
+    const badge = plan.onTrack
+      ? "border-color:rgba(16,185,129,.35);color:var(--green-bright);background:rgba(16,185,129,.08);"
+      : "border-color:rgba(245,158,11,.35);color:var(--gold-bright);background:rgba(245,158,11,.08);";
+    block.innerHTML = `<div class="section-head"><div><div class="section-title">Today's Study Targets</div>
+        <div class="section-sub">${plan.daysLeft} days to ${plan.end} · ${plan.pct}% of syllabus done</div></div>
+        <div class="section-badge" style="${badge}">${doneToday}/${plan.todayQuota} ${plan.onTrack ? "ON TRACK" : "PUSH"}</div></div>
+      <div class="quest-list">${list}</div>`;
+  }
+
+  // Weekly targets + countdown + suggested rhythm on the Roadmap tab.
+  function renderPlanRoadmap() {
+    const s = App.getState();
+    const plan = App.examPlan();
+    const tab = document.getElementById("tab-roadmap");
+    if (!tab) return;
+    let block = document.getElementById("plan-roadmap-block");
+    if (!block) {
+      block = document.createElement("div");
+      block.className = "section-block";
+      block.id = "plan-roadmap-block";
+      tab.insertBefore(block, tab.firstChild);
+    }
+    const doneWeek = plan.weekDone;
+    const weekList = plan.weekUnits.map(u => {
+      const done = !!s.topicProgress[u.id]?.completed;
+      return `<label class="tree-topic ${done ? "done" : ""}"><input type="checkbox" ${done ? "checked" : ""} onchange="App.completeTopic('${u.id}')"> ${escapeHtml(u.subtopic)} <span class="pw-subj">${escapeHtml(u.subject)}</span></label>`;
+    }).join("") || '<div class="empty-state">All weekly targets cleared. 🎯</div>';
+    const wkTopics = Math.max(1, Math.round(plan.avgPerDay));
+    block.innerHTML = `
+      <div class="section-head"><div><div class="section-title">Plan → ${plan.end}</div><div class="section-sub">Full UPSC + Maths optional · ${plan.weeksLeft} weeks left</div></div></div>
+      <div class="plan-grid">
+        <div class="plan-tile"><div class="pt-num">${plan.daysLeft}</div><div class="pt-lbl">Days left</div></div>
+        <div class="plan-tile"><div class="pt-num">${plan.pct}%</div><div class="pt-lbl">Syllabus done</div></div>
+        <div class="plan-tile"><div class="pt-num">${plan.remainingCount}</div><div class="pt-lbl">Topics left</div></div>
+        <div class="plan-tile"><div class="pt-num">${plan.todayQuota}</div><div class="pt-lbl">Target today</div></div>
+        <div class="plan-tile"><div class="pt-num">${plan.weekQuota}</div><div class="pt-lbl">This week</div></div>
+        <div class="plan-tile"><div class="pt-num">${plan.avgPerDay}</div><div class="pt-lbl">Avg/day needed</div></div>
+      </div>
+      <div class="plan-note ${plan.onTrack ? "ok" : "warn"}">${plan.onTrack ? "✓ On track for Dec 31 — just clear the daily targets." : "⚠ Behind pace — clear today's targets and add a weekend catch-up block."}</div>
+      <div class="plan-sched glass-card">
+        <div class="plan-sched-title">⏰ Suggested rhythm (around an 11am–8pm job)</div>
+        <div class="plan-sched-row"><b>Weekday</b> · ~1.5h morning (6:30–8) + 2h night (9–11) → ${wkTopics}–${wkTopics + 1} topics + daily CA</div>
+        <div class="plan-sched-row"><b>Weekend</b> · 6–7h split AM/PM → ${Math.round(plan.avgPerDay * 2.2)} topics + 1 PYQ set</div>
+        <div class="plan-sched-row"><b>Sunday</b> · one revision pass + a weekly mock</div>
+      </div>
+      <div class="section-head mt-12"><div class="section-title">This Week's Targets</div><div class="section-badge">${doneWeek}/${plan.weekQuota}</div></div>
+      <div class="tree-topics plan-week-list">${weekList}</div>`;
   }
 
   function renderTechTab(rd) {
@@ -5319,9 +5532,14 @@ window.doReset = doReset;
     },
     closeRewardEdit() { document.getElementById("reward-edit-modal")?.classList.remove("show"); },
     deleteRewardFromShell(id, fromModal) {
-      if (!id || !confirm("Delete this reward?")) return;
+      // Note: native confirm() is suppressed in iOS standalone web-apps, so we delete
+      // directly and surface a toast instead of relying on a blocking dialog.
+      if (!id) return;
+      const s = App.getState();
+      const r = (s.rewardsShop || []).find(x => x.id === id);
       deleteReward(id);
       if (fromModal) App.closeRewardEdit();
+      showToast(`🗑 ${r ? r.label : "Reward"} deleted`);
       App.render();
     },
     logExtraStudy(delta) {
@@ -5345,10 +5563,12 @@ window.doReset = doReset;
     },
     toggleHabit(id) { App.toggleQuest("habit_" + id); },
     removeHabitFromShell(id) {
-      if (!confirm("Delete this habit? Its history will be removed.")) return;
+      // native confirm() is unreliable in standalone web-apps — delete directly + toast.
       const s = App.getState();
+      const h = (s.habits || []).find(x => x.id === id);
       if (s.habitLog) delete s.habitLog[id];
       App.removeHabit(id); // wrapped to re-render
+      showToast(`🗑 ${h ? h.name : "Habit"} deleted`);
     },
     openHabitStats(id) {
       buildHabitStatsModal();
